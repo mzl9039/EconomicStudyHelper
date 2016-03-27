@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+# SharpDevelop 4.4
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EconomicStudyHelper", "EconomicStudyHelper\EconomicStudyHelper.csproj", "{134E8D71-71EF-4843-B2E0-681D331DF107}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHelper", "ArcEngineHelper\DataHelper.csproj", "{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogHelper", "LogHelper\LogHelper.csproj", "{3805BD6A-F266-4D53-A194-054854020C21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{11FF31DB-5A62-40A5-A7AE-34FF9F3DB2DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{134E8D71-71EF-4843-B2E0-681D331DF107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{134E8D71-71EF-4843-B2E0-681D331DF107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{134E8D71-71EF-4843-B2E0-681D331DF107}.Release|Any CPU.Build.0 = Release|Any CPU
+		{134E8D71-71EF-4843-B2E0-681D331DF107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3805BD6A-F266-4D53-A194-054854020C21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3805BD6A-F266-4D53-A194-054854020C21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3805BD6A-F266-4D53-A194-054854020C21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3805BD6A-F266-4D53-A194-054854020C21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11FF31DB-5A62-40A5-A7AE-34FF9F3DB2DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11FF31DB-5A62-40A5-A7AE-34FF9F3DB2DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11FF31DB-5A62-40A5-A7AE-34FF9F3DB2DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11FF31DB-5A62-40A5-A7AE-34FF9F3DB2DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+EndGlobal
