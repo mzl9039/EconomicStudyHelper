@@ -124,7 +124,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 return false;
             }
         }
@@ -200,9 +200,23 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 return false;
             }
+        }
+
+        public override void PrintTrueValue()
+        {
+            FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
+            string trueValueFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable真实值计算结果.txt";
+            base.PrintTrueValue(trueValueFile);
+        }
+
+        public override void PrintSimulateValue()
+        {
+            FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
+            string simualteFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable模拟值计算结果.txt";
+            base.PrintSimulateValue(simualteFile);
         }
 
         // 要创建的shp的全路径文件名 [3/21/2016 mzl]

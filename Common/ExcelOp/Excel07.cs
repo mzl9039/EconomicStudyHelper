@@ -86,7 +86,7 @@ namespace Common
              }
              catch (Exception ex)
              {
-                 Log.WriteError(ex.StackTrace);
+                 Log.WriteError(ex.ToString());
                  //throw ex;
                  return null;
              }

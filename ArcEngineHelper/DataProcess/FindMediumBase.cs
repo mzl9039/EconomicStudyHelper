@@ -20,6 +20,7 @@ namespace DataHelper
             Mediums = new ConcurrentQueue<MediumInfo>();
             InitDistanceFiles();
             this.MaxDistance = MaxDistance;
+            DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
         }
 
         public void CaculateMedium()
@@ -39,19 +40,24 @@ namespace DataHelper
                 int EnterprisesCount = Enterprises.Count;
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
-                Parallel.For(0, EnterprisesCount, (i, loopStateOut) =>
+                Enterprises.AsParallel().ForAll(x =>
                 {
-                    Enterprise eOut = Enterprises[i];
+                    int i = Enterprises.FindIndex(e => e.Equals(x));
                     for (int j = i + 1; j < EnterprisesCount; j++)
                     {
                         Enterprise eIn = Enterprises[j];
-                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
-                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
+                        double distance = Math.Sqrt((x.Point.Y - eIn.Point.Y) * (x.Point.Y - eIn.Point.Y) +
+                                                    (x.Point.X - eIn.Point.X) * (x.Point.X - eIn.Point.X)) / 1000;
 
                         if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
                             continue;
                         else
+                        {
+                            if (!DistanceFiles.ContainsKey((int)distance))                            
+                                continue;
+                            
                             DistanceFiles[(int)distance].FileRowCount++;
+                        }
                     }
                 });
                 watch.Stop();
@@ -59,8 +65,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
-                //throw ex;
+                Log.WriteError(ex.ToString());
             }
        }
 
@@ -95,7 +100,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 throw;
             }
         }
@@ -124,7 +129,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 //throw ex;
             }
         }
@@ -163,7 +168,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 //throw ex;
                 return null;
             }

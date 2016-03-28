@@ -46,7 +46,7 @@ namespace EconomicStudyHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 //throw ex;
             }
             finally

@@ -34,7 +34,7 @@ namespace DataHelper.FuncSet.EGIndex
 			try {				
 				SumXa = Enterprises.Sum(e => Math.Pow(e.man / TotalStaff, 2));
 			} catch (Exception ex) {
-				Log.WriteError(ex.StackTrace);
+				Log.WriteError(ex.ToString());
 				//throw ex;
 			}
 		}

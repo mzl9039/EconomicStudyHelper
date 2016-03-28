@@ -54,17 +54,17 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;       
         }
 
-        public void PrintTrueValue()
+        public virtual void PrintTrueValue()
         {
             FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
-            string trueValueFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\Kd真实值计算结果.txt";
+            string trueValueFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTable真实值计算结果.txt";
             base.PrintTrueValue(trueValueFile);
         }
 
-        public void PrintSimulateValue()
+        public virtual void PrintSimulateValue()
         {
             FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
-            string simualteFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\Kd模拟值计算结果.txt";
+            string simualteFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTable模拟值计算结果.txt";
             base.PrintSimulateValue(simualteFile);
         }
 

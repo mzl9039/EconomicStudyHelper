@@ -52,7 +52,7 @@ namespace DataHelper.FuncSet.EGIndex
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 //throw ex;
                 return false;
             }
@@ -133,7 +133,7 @@ namespace DataHelper.FuncSet.EGIndex
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteError(ex.StackTrace);
+                        Log.WriteError(ex.ToString());
                         //throw ex;
                         return null;
                     }
@@ -194,7 +194,7 @@ namespace DataHelper.FuncSet.EGIndex
                 //    }
                 //    catch (Exception ex)
                 //    {
-                //        Log.WriteError(ex.StackTrace);
+                //        Log.WriteError(ex.ToString());
                 //        //throw ex;
                 //        return null;
                 //    }
@@ -216,7 +216,7 @@ namespace DataHelper.FuncSet.EGIndex
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.StackTrace);
+                Log.WriteError(ex.ToString());
                 return null;
             }
             

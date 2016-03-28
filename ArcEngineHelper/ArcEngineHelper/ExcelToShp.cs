@@ -83,7 +83,7 @@ namespace DataHelper
 				IRelationalOperator relationOperator = geo as IRelationalOperator;
 				result = relationOperator.Contains(geoPoint);
 			} catch (Exception ex) {
-				Log.WriteError(ex.StackTrace);
+				Log.WriteError(ex.ToString());
 				throw;
 			}
 			return result;

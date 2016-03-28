@@ -55,7 +55,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         public void PrintTrueValue()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "Kd真实值计算结果"));
+            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable真实值计算结果"));
             if (!System.IO.Directory.Exists(fileIo.FilePath))
                 System.IO.Directory.CreateDirectory(fileIo.FilePath);
             base.PrintTrueValue(fileIo.FullFileName);
@@ -63,7 +63,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         public void PrintSimulateValue()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "Kd模拟值计算结果"));
+            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable模拟值计算结果"));
             base.PrintSimulateValue(fileIo.FullFileName);
         }
 
