@@ -1,4 +1,5 @@
 ﻿using Common;
+using Common.Data;
 using LogHelper;
 using System;
 using System.Collections.Concurrent;
@@ -20,34 +21,38 @@ namespace DataHelper
             Mediums = new ConcurrentQueue<MediumInfo>();
             InitDistanceFiles();
             this.MaxDistance = MaxDistance;
-            DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
         }
 
-        public void CaculateMedium()
+        public ConcurrentBag<TwoPointsDistance> CaculateMediumAndGetPointDistance(double MaxDistance)    
         {
-            CountDistancesPerKilometer();
+            ConcurrentBag<TwoPointsDistance> pointDistances = CountDistancesPerKilometer(MaxDistance);
             SetMediumsAndFindDistanceRange();
+            return pointDistances;
         }
 
         /// <summary>
         /// 计算落在每公里范围内的距离值的个数，计算中位数需要两次遍历（每次遍历均
         /// 为双层for循环，运算次数n(n-1)/2）运算，这是第一次
         /// </summary>
-        protected void CountDistancesPerKilometer()
+        protected ConcurrentBag<TwoPointsDistance> CountDistancesPerKilometer(double MaxDistance)
         {
+            ConcurrentBag<TwoPointsDistance> pointDistances = new ConcurrentBag<TwoPointsDistance>();
             try
             {
+                if (Enterprises == null || Enterprises.Count <= 0)
+                    return pointDistances;
+
                 int EnterprisesCount = Enterprises.Count;
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
-                Enterprises.AsParallel().ForAll(x =>
+                Parallel.For(0, EnterprisesCount, (i, loopStateOut) =>
                 {
-                    int i = Enterprises.FindIndex(e => e.Equals(x));
+                    Enterprise eOut = Enterprises[i];
                     for (int j = i + 1; j < EnterprisesCount; j++)
                     {
                         Enterprise eIn = Enterprises[j];
-                        double distance = Math.Sqrt((x.Point.Y - eIn.Point.Y) * (x.Point.Y - eIn.Point.Y) +
-                                                    (x.Point.X - eIn.Point.X) * (x.Point.X - eIn.Point.X)) / 1000;
+                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
+                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
 
                         if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
                             continue;
@@ -57,6 +62,8 @@ namespace DataHelper
                                 continue;
                             
                             DistanceFiles[(int)distance].FileRowCount++;
+                            if (EnterprisesCount <= 50000)
+                                pointDistances.Add(new TwoPointsDistance(eOut.ID, eIn.ID, distance));
                         }
                     }
                 });
@@ -67,7 +74,8 @@ namespace DataHelper
             {
                 Log.WriteError(ex.ToString());
             }
-       }
+            return pointDistances;
+        }
 
         /// <summary>
         /// 这里确定要找哪些中位数，如1/4中位数，1/2中位数，3/4中位数等等

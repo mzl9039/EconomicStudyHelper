@@ -37,7 +37,7 @@ namespace DataHelper
                         double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
                                                     (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
 
-                        if (0 == distance || (MaxDistance != 0.0 && distance > MaxDistance))
+                        if (0 == distance || (MaxDistance > 0.0 && distance > MaxDistance))
                             continue;                        
                         else                        
                             pointDistances.Add(new TwoPointsDistance(eOut.ID, eIn.ID, distance));                        

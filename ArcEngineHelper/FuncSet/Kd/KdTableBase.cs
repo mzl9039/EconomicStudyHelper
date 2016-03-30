@@ -1,9 +1,11 @@
 ﻿using Common;
 using Common.Data;
+using DataHelper.BaseUtil;
 using DataHelper.FuncSet.KdBase;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -29,6 +31,16 @@ namespace DataHelper.FuncSet.Kd
 
         }
 
+        public virtual void GetAllEnterprises()
+        {
+            if (Static.Enterprises == null)
+            {
+                DataTable table = Static.Table;
+                Static.Enterprises = DataProcess.ReadExcels(this.Excels, table, null, FunctionType.Kd);
+            }
+            this.Enterprises = Static.Enterprises;
+        }
+
         protected virtual void GetMedium()
         {
 
@@ -36,14 +48,7 @@ namespace DataHelper.FuncSet.Kd
 
         protected virtual void GetKFunc()
         {
-            int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
-            this.KFunc = new KFunc(this.Enterprises.Count, distance, this.MediumValue);
-        }
 
-        protected virtual void GetPointsDistance()
-        {
-            this.PointsDistances = FindMedium.CacuPointDistance(this.Enterprises, this.XValue);
-            KdBase.Kd_Mdl.SetN(this.Enterprises.Count);
         }
 
         protected virtual void GetTrueValue()
@@ -53,43 +58,26 @@ namespace DataHelper.FuncSet.Kd
 
         protected virtual void GetSimulateValue()
         {
-            for (int i = 0; i < Kd_Mdl.SimulateTimes; i++)
-            {
-                this.SimulateValue.AddRange(GetRandomValueOnce().Select(x => x.Value).ToList());
-            }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         protected virtual ConcurrentDictionary<int, double> GetRandomValueOnce()
         {
-            ConcurrentBag<TwoPointsDistance> randomDistances = CaculateRandomDistances();
-            ConcurrentDictionary<int, double> randomValue = Kd.Func(this.KFunc, randomDistances.Select(r => r.Distance).ToList());
-            return randomValue;
+            return null;
         }
 
         protected virtual ConcurrentBag<TwoPointsDistance> CaculateRandomDistances()
         {
-            ConcurrentBag<TwoPointsDistance> randomDistances = new ConcurrentBag<TwoPointsDistance>();
-
-            List<Enterprise> enterprise = GetRandomEnterprise();
-            randomDistances = FindMedium.CacuPointDistance(enterprise, 0.0);
-
-            return randomDistances;
+            return null;
         }
 
         // 随机选择n个企业
-        protected virtual List<Common.Enterprise> GetRandomEnterprise()
+        protected virtual List<Common.Enterprise> GetRandomEnterprises()
         {
-            List<Enterprise> enterprise = new List<Common.Enterprise>();
-
-            string str_seed = DateTime.Now.Hour.ToString() + DateTime.Now.Minute.ToString() + DateTime.Now.Second.ToString() + DateTime.Now.Millisecond.ToString();
-            Random random = new Random(Int32.Parse(str_seed));
-            for (int i = 0; i < KdBase.Kd_Mdl.N; i++)
-            {
-                int k = random.Next(this.Enterprises.Count);
-                if (!enterprise.Contains(this.Enterprises[k])) enterprise.Add(this.Enterprises[k]);
-                else i--;
-            }
-            return enterprise;
+            return null;
         }
 
         protected virtual void PrintTrueValue(string filename)
@@ -160,5 +148,7 @@ namespace DataHelper.FuncSet.Kd
         public ConcurrentDictionary<int, double> TrueValue { get; set; }
         // 模拟值集合 [3/12/2016 mzl]
         public List<double> SimulateValue { get; set; }
+        // 当前所有的excels [3/11/2016 mzl]
+        public List<string> Excels { get; set; }
     }
 }

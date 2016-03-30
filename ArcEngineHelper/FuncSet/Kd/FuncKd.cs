@@ -47,7 +47,7 @@ namespace DataHelper.FuncSet.Kd
         // 1/2距离值
         public double Di { get; set; }
 
-        public KFunc(int n, double r, double d)
+        public KFunc(int n, double r, double d = 0)
         {
             this.Di = d;
             this.n = n;

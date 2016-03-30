@@ -25,7 +25,6 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
         {
             GetEnterprises();
             GetMedium();
-            GetPointsDistance();
             GetKFunc();
         }
 
@@ -41,16 +40,16 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         protected override void GetEnterprises()
         {
-            DataTable table = Static.Table;
-            this.Enterprises = DataProcess.ReadExcels(this.Excels, table, null, FunctionType.Kd);
+            base.GetAllEnterprises();
         }
 
         protected override void GetMedium()
         {
             FindMediumBase findMedium = new FindMediumBase(this.Enterprises, this.XValue);
-            findMedium.CaculateMedium();
+            this.PointsDistances = findMedium.CaculateMediumAndGetPointDistance(0.0);
             this.Medium = findMedium.Mediums;
             this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
+            KdBase.Kd_Mdl.SetN(this.Enterprises.Count);
         }
 
         public void PrintTrueValue()
@@ -85,7 +84,6 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
             }
         }
 
-        // 当前所有的excels [3/11/2016 mzl]
-        public List<string> Excels { get; set; }
+
     }
 }

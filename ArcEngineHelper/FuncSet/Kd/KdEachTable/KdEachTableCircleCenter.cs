@@ -29,10 +29,17 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             GenerateShp();
             CaculateCenterEnterprise();
             GetMedium();
-            GetPointsDistance();
             GetKFunc();
-        }       
+        }
 
+        public override void CaculateRandomParams()
+        {
+            GetRandomEnterprises();
+            GetRandomMedium();
+            GetRandomKFunc();
+        }
+
+        #region 真实值计算相关
         protected void GenerateShp()
         {
             FileIOInfo fileIo = new FileIOInfo(this.ExcelFile);
@@ -158,14 +165,9 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         {
             // 怎么求解 [3/21/2016 mzl]
             FindMedium findMedium = new FindMedium(this.ExcelFile, this.CenterEnterprise.Enterprises, this.XValue);
-            findMedium.CaculateMedium();
+            this.PointsDistances = findMedium.CaculateMediumAndGetPointDistance(0.0);
             this.Medium = findMedium.Mediums;
             this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
-        }
-
-        protected override void GetPointsDistance()
-        {
-            this.PointsDistances = FindMedium.CacuPointDistance(this.CenterEnterprise.Enterprises, this.XValue);
             KdBase.Kd_Mdl.SetN(this.CenterEnterprise.Enterprises.Count);
         }
 
@@ -173,6 +175,29 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         {
             int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
             this.KFunc = new KFunc(this.CenterEnterprise.EnterprisesInCircle, distance, this.MediumValue);
+        }
+        #endregion
+
+        #region 模拟值计算相关
+        protected override List<Enterprise> GetRandomEnterprises()
+        {
+            RandomEnterprises.Clear();
+
+            string str_seed = DateTime.Now.Hour.ToString() + DateTime.Now.Minute.ToString() + DateTime.Now.Second.ToString() + DateTime.Now.Millisecond.ToString();
+            Random random = new Random(Int32.Parse(str_seed));
+            for (int i = 0; i < KdBase.Kd_Mdl.N; i++)
+            {
+                int k = random.Next(this.CenterEnterprise.Enterprises.Count);
+                if (!RandomEnterprises.Contains(this.SingleDogEnterprise[k])) RandomEnterprises.Add(this.SingleDogEnterprise[k]);
+                else i--;
+            }
+            return RandomEnterprises;
+        }
+        #endregion
+
+        public override void CaculateSimulateValue()
+        {
+            GetSimulateValue();
         }
 
         private bool ExcelData2Shp()
@@ -188,7 +213,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
                     IFeature feature = EnterpriseFeatureCls.CreateFeature();
                     //feature.Shape.SpatialReference = GlobalShpInfo.SpatialReference;
                     //feature.Shape = ExcelToShp.CastPointByFunctionType(Enterprises[i].Point.X, Enterprises[i].Point.Y, FunctionType.KdEachTableCircle);
-                    feature.Shape = Enterprises[i].Point;
+                    feature.Shape = Enterprises[i].GeoPoint;
                     feature.set_Value(EnterpriseFeatureCls.FindField("ExcelId"), Enterprises[i].ID);
                     //feature.set_Value(EnterpriseFeatureCls.FindField("Man"), Enterprises[i].man);
                     feature.Store();

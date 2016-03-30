@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Geodatabase;
+using Common;
 
 namespace DataHelper.BaseUtil
 {
@@ -25,5 +26,7 @@ namespace DataHelper.BaseUtil
 
         // 要生成的shp的属性表结构
         public static IFields Fields = null;
+
+        public static List<Enterprise> Enterprises = null;
     }
 }

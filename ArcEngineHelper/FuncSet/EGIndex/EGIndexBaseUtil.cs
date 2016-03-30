@@ -40,7 +40,7 @@ namespace DataHelper.FuncSet.EGIndex
                 {                    
                     IFeature feature = fc.CreateFeature();
                     //feature.Shape.SpatialReference = GlobalShpInfo.SpatialReference;
-                    feature.Shape = enterprises[i].Point;
+                    feature.Shape = enterprises[i].GeoPoint;
                     feature.set_Value(fc.FindField("ExcelId"), enterprises[i].ID);
                     feature.set_Value(fc.FindField("Man"), enterprises[i].man);
                     feature.Store();
@@ -107,7 +107,7 @@ namespace DataHelper.FuncSet.EGIndex
                             enterprises.AsParallel().ForAll(e =>
                             {
                                 IRelationalOperator relationalOperator = geo as IRelationalOperator;
-                                if (relationalOperator.Contains(e.Point))
+                                if (relationalOperator.Contains(e.GeoPoint))
                                     AllEnterprises.Add(e);
                             });
                             // 若全部企业在该地区没有数据，则A企业在该地区一定没有数据
@@ -121,7 +121,7 @@ namespace DataHelper.FuncSet.EGIndex
                             kv.Value.Enterprises.AsParallel().ForAll(e => 
                             {
                                 IRelationalOperator relationalOperator = geo as IRelationalOperator;
-                                if (relationalOperator.Contains(e.Point))
+                                if (relationalOperator.Contains(e.GeoPoint))
                                     AEnterprises.Add(e);
                             });
                             Sai = AEnterprises.Sum(e => e.man) / kv.Value.TotalStaff;
