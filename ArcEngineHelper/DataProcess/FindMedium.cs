@@ -36,15 +36,14 @@ namespace DataHelper
             InitDistanceFiles();
         }
 
-        private void InitDistanceFiles()
+        public override void InitDistanceFiles()
         {
             DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
-            DistanceFile df = null;
             FileIOInfo fio = new FileIOInfo(this.Filename);
             string dfDir = fio.FilePath + @"\" + fio.FileNameWithoutExt;
             for (int i = 0; i < 5000; i++)
             {
-                df = new DistanceFile(string.Format(dfDir + @"\{0}.txt", i.ToString()), i);
+                DistanceFile df = new DistanceFile(string.Format(dfDir + @"\{0}.txt", i.ToString()), i);
                 DistanceFiles.TryAdd(i, df);
             }
         }

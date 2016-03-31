@@ -68,19 +68,30 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         public void PrintMediumValue()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "中位数"));
-            if (File.Exists(fileIo.FullFileName))
-                File.Delete(fileIo.FullFileName);
-
-            using (FileStream fs = new FileStream(fileIo.FullFileName, FileMode.Create))
+            try
             {
-                StreamWriter sw = new StreamWriter(fs);
-                for (int i = 0; i < Medium.Count; i++)
+                FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "中位数"));
+                if (!Directory.Exists(fileIo.FilePath))
+                    Directory.CreateDirectory(fileIo.FilePath);
+
+                if (File.Exists(fileIo.FullFileName))
+                    File.Delete(fileIo.FullFileName);
+
+                using (FileStream fs = new FileStream(fileIo.FullFileName, FileMode.Create))
                 {
-                    sw.WriteLine("{0}：{1}", Medium.ElementAt(i).Symbol, Medium.ElementAt(i).DistanceFile.Distance);
+                    StreamWriter sw = new StreamWriter(fs);
+                    for (int i = 0; i < Medium.Count; i++)
+                    {
+                        sw.WriteLine("{0}：{1}", Medium.ElementAt(i).Symbol, Medium.ElementAt(i).DistanceFile.Distance);
+                    }
+                    sw.Flush();
+                    sw.Close();
                 }
-                sw.Flush();
-                sw.Close();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log.WriteError(ex.ToString());
+                throw;
             }
         }
 

@@ -16,7 +16,7 @@ namespace Common
 	/// </summary>
 	public class MediumInfo
 	{
-		public MediumInfo(double symbol, Int64 counter){
+		public MediumInfo(double symbol, double counter){
 			Symbol = symbol;
 			Counter = counter;
 			Stop = false;		
@@ -45,7 +45,7 @@ namespace Common
 		// 标识当前的这个对象的是哪个中位数，可以是1/4,1/2,3/4等等
 		public double Symbol { get; set; }
 		// 标识上面的Symbol对应总距离里的第几个
-		public Int64 Counter { get; set; }
+		public double Counter { get; set; }
 		// 是否找到了上面的Counter，找到了则设为true
 		public bool Stop { get; set; }
 		// 当前对象存储的DistanceFile信息

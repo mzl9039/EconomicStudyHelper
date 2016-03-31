@@ -68,7 +68,7 @@ namespace DataHelper
                     }
                 });
                 watch.Stop();
-                System.Console.WriteLine(watch.ElapsedTicks);
+                Log.WriteLog("CountDistancesPerKilometer:运行时间：" + (watch.ElapsedMilliseconds / 1000));
             }
             catch (Exception ex)
             {
@@ -88,12 +88,16 @@ namespace DataHelper
             try
             {
                 // 计算一共产生的数据条数
-                double total_num = this.DistanceFiles.Sum(d => d.Value.FileRowCount);
+                double total_num = 0;
+                foreach (var d in this.DistanceFiles)
+                {
+                    total_num += d.Value.FileRowCount;
+                }
                 // 若要修改要找的中位数的个数或值，只需要修改这个数组
                 double[] mediumSymbols = new double[] { 0.25, 0.5, 0.75 };
                 foreach (var symbol in mediumSymbols)
                 {                
-                    Mediums.Enqueue(new MediumInfo(symbol, (Int64)(total_num * symbol)));
+                    Mediums.Enqueue(new MediumInfo(symbol, (total_num * symbol)));
                 }
 
                 for (int i = 0; i < DistanceFiles.Count; i++)
@@ -188,15 +192,15 @@ namespace DataHelper
 
         public ConcurrentQueue<MediumInfo> Mediums { get; set; }
 
-        private void InitDistanceFiles()
+        public virtual void InitDistanceFiles()
         {
+            Log.WriteLog("初始化DistanceFiles");
             DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
-            DistanceFile df = null;
             FileIOInfo fio = new FileIOInfo(string.Format("{0}\\计算所有excel.xlsx", Const.AllCaculatedPath));
             string dfDir = fio.FilePath + @"\" + fio.FileNameWithoutExt;
             for (int i = 0; i < 5000; i++)
             {
-                df = new DistanceFile(string.Format(dfDir + @"\{0}.txt", i.ToString()), i);
+                DistanceFile df = new DistanceFile(string.Format(dfDir + @"\{0}.txt", i.ToString()), i);
                 DistanceFiles.TryAdd(i, df);
             }
         }
