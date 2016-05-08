@@ -35,7 +35,7 @@ namespace EconomicStudyHelper
 			GlobalDataInfo.InitalGlobalDataInfo();			
 
             InitCbxFuncType();
-		    cbxFuncType.SelectedItem = ft[5];
+		    cbxFuncType.SelectedItem = ft[4];
 		}
 		
 		void Btn_StartClick(object sender, EventArgs e)
@@ -85,7 +85,7 @@ namespace EconomicStudyHelper
                     kdBase.CaculateKdEachTableByAllTableMedium();
                     break;
                 case "K(d)Circle":
-                    GlobalShpInfo.InitalShpInfo();
+                    //GlobalShpInfo.InitalShpInfo();
                     Static.TableDiametar = DataPreProcess.GenerateTableAllEnterpriseSearchDiameter();
                     kdBase = new KdBase(excels.ToList());
                     kdBase.GetCircleeDiameters();

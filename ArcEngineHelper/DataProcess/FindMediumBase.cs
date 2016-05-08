@@ -1,5 +1,6 @@
 ﻿using Common;
 using Common.Data;
+using DataHelper.BaseUtil;
 using LogHelper;
 using System;
 using System.Collections.Concurrent;
@@ -19,28 +20,27 @@ namespace DataHelper
         {
             this.Enterprises = enterprises;
             Mediums = new ConcurrentQueue<MediumInfo>();
-            InitDistanceFiles();
             this.MaxDistance = MaxDistance;
         }
 
-        public ConcurrentBag<TwoPointsDistance> CaculateMediumAndGetPointDistance(double MaxDistance)    
+        public void CaculateMediumAndGetPointDistance(double MaxDistance)    
         {
-            ConcurrentBag<TwoPointsDistance> pointDistances = CountDistancesPerKilometer(MaxDistance);
+            CountDistancesPerKilometer(MaxDistance);
             SetMediumsAndFindDistanceRange();
-            return pointDistances;
         }
 
         /// <summary>
         /// 计算落在每公里范围内的距离值的个数，计算中位数需要两次遍历（每次遍历均
         /// 为双层for循环，运算次数n(n-1)/2）运算，这是第一次
         /// </summary>
-        protected ConcurrentBag<TwoPointsDistance> CountDistancesPerKilometer(double MaxDistance)
+        protected void CountDistancesPerKilometer(double MaxDistance)
         {
-            ConcurrentBag<TwoPointsDistance> pointDistances = new ConcurrentBag<TwoPointsDistance>();
             try
             {
                 if (Enterprises == null || Enterprises.Count <= 0)
-                    return pointDistances;
+                    return;
+
+                InitDistanceFiles();
 
                 int EnterprisesCount = Enterprises.Count;
                 Stopwatch watch = new Stopwatch();
@@ -48,33 +48,41 @@ namespace DataHelper
                 Parallel.For(0, EnterprisesCount, (i, loopStateOut) =>
                 {
                     Enterprise eOut = Enterprises[i];
-                    for (int j = i + 1; j < EnterprisesCount; j++)
+                    try
                     {
-                        Enterprise eIn = Enterprises[j];
-                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
-                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
-
-                        if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
-                            continue;
-                        else
+                        for (int j = i + 1; j < EnterprisesCount; j++)
                         {
-                            if (!DistanceFiles.ContainsKey((int)distance))                            
+                            Enterprise eIn = Enterprises[j];
+                            double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
+                                                        (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
+
+                            if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
                                 continue;
-                            
-                            DistanceFiles[(int)distance].FileRowCount++;
-                            if (EnterprisesCount <= 50000)
-                                pointDistances.Add(new TwoPointsDistance(eOut.ID, eIn.ID, distance));
+                            else
+                            {
+                                if (!DistanceFiles.ContainsKey((int)distance))
+                                    continue;
+
+                                DistanceFiles[(int)distance].FileRowCount++;
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteError("距离并行计算异常中止：" + ex.ToString());
+                        loopStateOut.Stop();
                     }
                 });
                 watch.Stop();
                 Log.WriteLog("CountDistancesPerKilometer:运行时间：" + (watch.ElapsedMilliseconds / 1000));
             }
-            catch (Exception ex)
+            catch (AggregateException aex)
             {
-                Log.WriteError(ex.ToString());
-            }
-            return pointDistances;
+                for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)
+                {
+                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());
+                }
+            }       
         }
 
         /// <summary>
@@ -196,7 +204,8 @@ namespace DataHelper
         {
             Log.WriteLog("初始化DistanceFiles");
             DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
-            FileIOInfo fio = new FileIOInfo(string.Format("{0}\\计算所有excel.xlsx", Const.AllCaculatedPath));
+            string filename = System.IO.Path.Combine(Static.SelectedPath, Const.AllCaculatedPath + ".txt");
+            FileIOInfo fio = new FileIOInfo(filename);
             string dfDir = fio.FilePath + @"\" + fio.FileNameWithoutExt;
             for (int i = 0; i < 5000; i++)
             {

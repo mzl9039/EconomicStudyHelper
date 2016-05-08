@@ -11,6 +11,8 @@ using ESRI.ArcGIS.Geometry;
 using Common.Data;
 using Common;
 using ESRI.ArcGIS.Geoprocessor;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace DataHelper.FuncSet.Kd.KdEachTable
 {
@@ -25,8 +27,10 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
 
         public override void CaculateParams()
         {
+            if (IsTrueValueCacualted())
+                return;
+
             GetEnterprises();
-            GenerateShp();
             CaculateCenterEnterprise();
             GetMedium();
             GetKFunc();
@@ -40,100 +44,36 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         }
 
         #region 真实值计算相关
-        protected void GenerateShp()
-        {
-            FileIOInfo fileIo = new FileIOInfo(this.ExcelFile);
-            if (!Directory.Exists(fileIo.FilePath + "\\" + fileIo.FileNameWithoutExt))
-                Directory.CreateDirectory(fileIo.FilePath + "\\" + fileIo.FileNameWithoutExt);
-            shpName = System.IO.Path.Combine(fileIo.FilePath, fileIo.FileNameWithoutExt, fileIo.FileNameWithoutExt + ".shp");
-            bufferShpName = System.IO.Path.Combine(fileIo.FilePath, fileIo.FileNameWithoutExt, fileIo.FileNameWithoutExt + "_buffer.shp");
-
-            if (EnterpriseFeatureCls == null || EnterpriseWorkspace == null)
-            {
-                if (!File.Exists(shpName))
-                {
-                    EnterpriseFeatureCls = DataPreProcess.CreateShpFile(Static.Fields, shpName);
-                    EnterpriseFeatureClsBuffer = DataPreProcess.CreateShpFile(GlobalShpInfo.GeneratePolygonFields(), bufferShpName);
-                    EnterpriseWorkspace = Geodatabase.GeodatabaseOp.Open_shapefile_Workspace(shpName);
-                    ExcelData2Shp();
-                    GenerateBufferShp();
-                }
-                else
-                {
-                    EnterpriseFeatureCls = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(shpName);
-                    EnterpriseFeatureClsBuffer = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(bufferShpName);
-                    EnterpriseWorkspace = Geodatabase.GeodatabaseOp.Open_shapefile_Workspace(shpName);
-                }
-            }
-        }
 
         protected void CaculateCenterEnterprise()
-        {
-            IFeature featPt;
-            ISpatialFilter spatialFilter = new SpatialFilterClass();
-            IFeatureCursor featCursor = this.EnterpriseFeatureClsBuffer.Search(null, false);
-            while ((featPt = featCursor.NextFeature()) != null)
-            {                
-                spatialFilter.Geometry = featPt.Shape;
-                spatialFilter.SpatialRel = esriSpatialRelEnum.esriSpatialRelContains;
-                int count = EnterpriseFeatureCls.FeatureCount(spatialFilter);
-                if (count > this.CenterEnterprise.EnterprisesInCircle)
-                {
-                    this.CenterEnterprise.EnterprisesInCircle = count;
-                    this.CenterEnterprise.EnterpriseId = featPt.Value[featPt.Fields.FindField("ExcelId")].ToString();
-                }
-            }
+        {            
+            CenterEnterprise model = this.CenterEnterprise;
+            model.EnterpriseId = this.SingleDogEnterprise[0].ID;
+            model.Enterprises = new List<Enterprise>();
+            for (int i = 0; i < this.SingleDogEnterprise.Count; i++)
+            {
+                Enterprise ce = SingleDogEnterprise[i];
+                List<Enterprise> tempList = (from e in this.SingleDogEnterprise.AsParallel()
+                                             let distance = (Math.Sqrt((ce.Point.X - e.Point.X) * (ce.Point.X - e.Point.X) +
+                                                      (ce.Point.Y - e.Point.Y) * (ce.Point.Y - e.Point.Y)) / 1000)
+                                             where distance != 0 && distance <= (this.Diameter / 2)
+                                             select e).ToList();
 
-            IQueryFilter queryFilter = new QueryFilterClass();
-            queryFilter.WhereClause = string.Format("ExcelId = '{0}'", this.CenterEnterprise.EnterpriseId);
-            featCursor = this.EnterpriseFeatureClsBuffer.Search(queryFilter, false);
-            featPt = featCursor.NextFeature();
-            if (featPt != null)
-            {     
-                spatialFilter.Geometry = featPt.Shape;
-                spatialFilter.SpatialRel = esriSpatialRelEnum.esriSpatialRelContains;
-                IFeatureCursor cursor = EnterpriseFeatureCls.Search(spatialFilter, false);
-                IFeature feature;
-                while ((feature = cursor.NextFeature()) != null)
+                if (tempList.Count > model.Enterprises.Count)
                 {
-                    Enterprise en = this.Enterprises.Find(x => x.ID.Equals(feature.Value[feature.Fields.FindField("ExcelId")].ToString()));
-                    if (en != null)
-                        this.CenterEnterprise.Enterprises.Add(en);
+                    model.EnterpriseId = ce.ID;
+                    model.Enterprises = tempList;
                 }
             }
             PrintEnterprises();
-            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(featCursor);
-        }
+        }        
 
-        protected bool GenerateBufferShp()
+        public override void CaculateTrueValue()
         {
-            MapEditEnvOp.InitalMapEditEvn(EnterpriseWorkspace, EnterpriseFeatureClsBuffer);
-            try
-            {
-                MapEditEnvOp.StartEditing();
-                MapEditEnvOp.GetWorkspaceEdit().StartEditOperation();
+            if (IsTrueValueCacualted())
+                return;
 
-                for (int i = 0; i < Enterprises.Count; i++)
-                {
-                    IFeature feature = EnterpriseFeatureClsBuffer.CreateFeature();
-                    //feature.Shape.SpatialReference = GlobalShpInfo.SpatialReference;
-                    //feature.Shape = ExcelToShp.CastPointByFunctionType(Enterprises[i].Point.X, Enterprises[i].Point.Y, FunctionType.KdEachTableCircle);
-                    ITopologicalOperator topo = Enterprises[i].Point as ITopologicalOperator;
-                    IGeometry geo = topo.Buffer(this.Diameter * 1000 / 2);
-                    feature.Shape = geo;
-                    feature.set_Value(EnterpriseFeatureClsBuffer.FindField("ExcelId"), Enterprises[i].ID);
-                    feature.Store();
-                }
-
-                MapEditEnvOp.GetWorkspaceEdit().StopEditOperation();
-                MapEditEnvOp.StopEditing(true);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.WriteError(ex.ToString());
-                return false;
-            }
+            GetTrueValue(this.CenterEnterprise.Enterprises);
         }
 
         // 圆内的企业和圆心企业 [3/21/2016 mzl]
@@ -165,7 +105,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         {
             // 怎么求解 [3/21/2016 mzl]
             FindMedium findMedium = new FindMedium(this.ExcelFile, this.CenterEnterprise.Enterprises, this.XValue);
-            this.PointsDistances = findMedium.CaculateMediumAndGetPointDistance(0.0);
+            findMedium.CaculateMediumAndGetPointDistance(0.0);
             this.Medium = findMedium.Mediums;
             this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
             KdBase.Kd_Mdl.SetN(this.CenterEnterprise.Enterprises.Count);
@@ -174,7 +114,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         protected override void GetKFunc()
         {
             int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
-            this.KFunc = new KFunc(this.CenterEnterprise.EnterprisesInCircle, distance, this.MediumValue);
+            this.KFunc = new KFunc(this.CenterEnterprise.Enterprises.Count, distance, this.MediumValue);
         }
         #endregion
 
@@ -187,7 +127,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             Random random = new Random(Int32.Parse(str_seed));
             for (int i = 0; i < KdBase.Kd_Mdl.N; i++)
             {
-                int k = random.Next(this.CenterEnterprise.Enterprises.Count);
+                int k = random.Next(this.SingleDogEnterprise.Count);
                 if (!RandomEnterprises.Contains(this.SingleDogEnterprise[k])) RandomEnterprises.Add(this.SingleDogEnterprise[k]);
                 else i--;
             }
@@ -197,61 +137,42 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
 
         public override void CaculateSimulateValue()
         {
+            if (IsSimulatedValueCaculated())
+                return;
+
             GetSimulateValue();
         }
 
-        private bool ExcelData2Shp()
-        {            
-            MapEditEnvOp.InitalMapEditEvn(EnterpriseWorkspace, EnterpriseFeatureCls);
-            try
-            {
-                MapEditEnvOp.StartEditing();
-                MapEditEnvOp.GetWorkspaceEdit().StartEditOperation();
-
-                for (int i = 0; i < Enterprises.Count; i++)
-                {
-                    IFeature feature = EnterpriseFeatureCls.CreateFeature();
-                    //feature.Shape.SpatialReference = GlobalShpInfo.SpatialReference;
-                    //feature.Shape = ExcelToShp.CastPointByFunctionType(Enterprises[i].Point.X, Enterprises[i].Point.Y, FunctionType.KdEachTableCircle);
-                    feature.Shape = Enterprises[i].GeoPoint;
-                    feature.set_Value(EnterpriseFeatureCls.FindField("ExcelId"), Enterprises[i].ID);
-                    //feature.set_Value(EnterpriseFeatureCls.FindField("Man"), Enterprises[i].man);
-                    feature.Store();
-                }
-
-                MapEditEnvOp.GetWorkspaceEdit().StopEditOperation();
-                MapEditEnvOp.StopEditing(true);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.WriteError(ex.ToString());
-                return false;
-            }
+        protected override string GetTrueFileName()
+        {
+            FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
+            string trueValueFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable真实值计算结果.txt";
+            return trueValueFile;
         }
 
         public override void PrintTrueValue()
         {
+            if (IsTrueValueCacualted())
+                return;
+
+            base.PrintTrueValue(GetTrueFileName());
+        }
+
+        protected override string GetSimulateFileName()
+        {
             FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
-            string trueValueFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable真实值计算结果.txt";
-            base.PrintTrueValue(trueValueFile);
+            string simualteFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable模拟值计算结果.txt";
+            return simualteFile;
         }
 
         public override void PrintSimulateValue()
         {
-            FileIOInfo fileIO = new FileIOInfo(this.ExcelFile);
-            string simualteFile = fileIO.FilePath + "\\" + fileIO.FileNameWidthoutPath + "\\KdEachTableCircleTable模拟值计算结果.txt";
-            base.PrintSimulateValue(simualteFile);
+            if (IsSimulatedValueCaculated())
+                return;
+
+            base.PrintSimulateValue(GetSimulateFileName());
         }
 
-        // 要创建的shp的全路径文件名 [3/21/2016 mzl]
-        private string shpName = string.Empty;
-        private string bufferShpName = string.Empty;
-        // 创建的shp的featureclass [3/21/2016 mzl]
-        private IFeatureClass EnterpriseFeatureCls = null;
-        private IFeatureClass EnterpriseFeatureClsBuffer = null;
-        // 创建的shp的workspace [3/21/2016 mzl]
-        private IWorkspace EnterpriseWorkspace = null;
         public double Diameter { get; private set; }
         public CenterEnterprise CenterEnterprise { get; set; }
     }

@@ -19,6 +19,8 @@ namespace DataHelper
 		{
             FullFileName = filename;
 			FilePath = System.IO.Path.GetDirectoryName(filename);
+            if (!System.IO.Directory.Exists(FilePath))
+                System.IO.Directory.CreateDirectory(FilePath);
 			FileName = System.IO.Path.GetFileName(filename);
 			FileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(filename);
             System.IO.FileInfo fileInfo = new System.IO.FileInfo(filename);

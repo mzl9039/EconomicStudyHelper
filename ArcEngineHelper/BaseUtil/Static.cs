@@ -28,5 +28,11 @@ namespace DataHelper.BaseUtil
         public static IFields Fields = null;
 
         public static List<Enterprise> Enterprises = null;
+
+        public static void ReleaseMemory()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
     }
 }

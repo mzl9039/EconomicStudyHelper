@@ -123,11 +123,11 @@ namespace DataHelper.FuncSet.KdBase
                 kdET.XValue = 0;
                 kdET.CaculateParams();
                 // 重设kdET的KFunc的Di值 [3/14/2016 mzl]
-                kdET.KFunc.Di = mediumValue;
+                if (kdET.KFunc != null)
+                    kdET.KFunc.Di = mediumValue;
                 kdET.CaculateTrueValue();
                 kdET.PrintTrueValue();
                 kdET.GetAllEnterprises();
-                kdET.CaculateRandomParams();
                 //kdET.KFunc.Di = mediumValue;
                 kdET.CaculateSimulateValue();
                 kdET.PrintSimulateValue();
@@ -148,7 +148,6 @@ namespace DataHelper.FuncSet.KdBase
                     kdEtCC.CaculateParams();
                     kdEtCC.CaculateTrueValue();
                     kdEtCC.PrintTrueValue();
-                    kdEtCC.CaculateRandomParams();
                     kdEtCC.CaculateSimulateValue();
                     kdEtCC.PrintSimulateValue();
                 }

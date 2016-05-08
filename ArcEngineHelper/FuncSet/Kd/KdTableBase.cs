@@ -21,7 +21,6 @@ namespace DataHelper.FuncSet.Kd
         {
             this.Enterprises = new List<Enterprise>();
             this.Medium = new ConcurrentQueue<MediumInfo>();
-            this.PointsDistances = new ConcurrentBag<TwoPointsDistance>();
             this.TrueValue = new ConcurrentDictionary<int, double>();
             this.XValue = 0.0;
         }
@@ -51,9 +50,9 @@ namespace DataHelper.FuncSet.Kd
 
         }
 
-        protected virtual void GetTrueValue()
+        protected virtual void GetTrueValue(List<Enterprise> Enterprises)
         {
-            this.TrueValue = Kd.Func(this.KFunc, this.PointsDistances.Select(d => d.Distance).ToList());
+            this.TrueValue = Kd.Func(this.KFunc, Enterprises);
         }
 
         protected virtual void GetSimulateValue()
@@ -80,12 +79,15 @@ namespace DataHelper.FuncSet.Kd
             return null;
         }
 
+        protected virtual string GetTrueFileName()
+        {
+            return string.Empty;
+        }
+
         protected virtual void PrintTrueValue(string filename)
         {
-            if (File.Exists(filename))
+            if (IsValueCaculated(filename))
                 return;
-            if (!Directory.Exists(System.IO.Path.GetDirectoryName(filename)))
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filename));
             
             using (FileStream fs = new FileStream(filename, FileMode.Create))
             {
@@ -101,9 +103,32 @@ namespace DataHelper.FuncSet.Kd
             }
         }
 
+        protected virtual bool IsValueCaculated(string filename)
+        {
+            try
+            {
+                if (File.Exists(filename))
+                    return true;
+                if (!Directory.Exists(System.IO.Path.GetDirectoryName(filename)))
+                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filename));
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log.WriteError(ex.ToString());
+                return false;
+            }
+        }
+
+        protected virtual string GetSimulateFileName()
+        {
+            return string.Empty;
+        }
+
         protected virtual void PrintSimulateValue(string filename)
         {
-            if (File.Exists(filename))
+            if (IsValueCaculated(filename))
                 return;
 
             List<double> simulate = new List<double>();
@@ -142,7 +167,6 @@ namespace DataHelper.FuncSet.Kd
         // 每个Excel文件中所有的数据
         protected List<Enterprise> Enterprises { get; set; }
         // 两点间距离的集合 [3/11/2016 mzl]
-        protected ConcurrentBag<TwoPointsDistance> PointsDistances { get; set; }
         public KFunc KFunc { get; set; }
         // 真实值 [3/11/2016 mzl]
         public ConcurrentDictionary<int, double> TrueValue { get; set; }

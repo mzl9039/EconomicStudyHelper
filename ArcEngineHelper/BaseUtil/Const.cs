@@ -13,7 +13,7 @@ namespace DataHelper
 {
     public class Const
     {
-        public const string AllCaculatedPath = "计算全部中位数";
+        public const string AllCaculatedPath = "所有表的数据";
     }
 
     public enum FunctionType

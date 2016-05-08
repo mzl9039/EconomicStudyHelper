@@ -30,7 +30,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         public void CaculateTrueValue()
         {
-            GetTrueValue();
+            GetTrueValue(this.Enterprises);
         }
 
         public void CaculateSimulateValue()
@@ -46,24 +46,42 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
         protected override void GetMedium()
         {
             FindMediumBase findMedium = new FindMediumBase(this.Enterprises, this.XValue);
-            this.PointsDistances = findMedium.CaculateMediumAndGetPointDistance(0.0);
+            findMedium.CaculateMediumAndGetPointDistance(0.0);
             this.Medium = findMedium.Mediums;
             this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
             KdBase.Kd_Mdl.SetN(this.Enterprises.Count);
         }
 
-        public void PrintTrueValue()
+        protected override string GetTrueFileName()
         {
             FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable真实值计算结果"));
             if (!System.IO.Directory.Exists(fileIo.FilePath))
                 System.IO.Directory.CreateDirectory(fileIo.FilePath);
-            base.PrintTrueValue(fileIo.FullFileName);
+            return fileIo.FullFileName; 
+        }
+
+        public void PrintTrueValue()
+        {
+            string trueFileName = GetTrueFileName();
+            if (!IsValueCaculated(trueFileName))
+            {
+                base.PrintTrueValue(trueFileName);
+            }
+        }
+
+        protected override string GetSimulateFileName()
+        {
+            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable模拟值计算结果"));
+            return fileIo.FullFileName;
         }
 
         public void PrintSimulateValue()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable模拟值计算结果"));
-            base.PrintSimulateValue(fileIo.FullFileName);
+            string simulateFileName = GetSimulateFileName();
+            if (!IsValueCaculated(simulateFileName))
+            {
+                base.PrintSimulateValue(simulateFileName);
+            }
         }
 
         public void PrintMediumValue()

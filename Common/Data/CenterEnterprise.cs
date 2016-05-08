@@ -14,14 +14,12 @@ namespace Common.Data
             this.Excel = excel;
             this.Diameter = diameter;
             EnterpriseId = string.Empty;
-            EnterprisesInCircle = 0;
             Enterprises = new List<Enterprise>();
         }
 
         public string Excel { get; set; }
         public string EnterpriseId{ get; set; }
         public double Diameter { get; set; }
-        public int EnterprisesInCircle { get; set; }
         public List<Enterprise> Enterprises { get; set; }
     }
 }

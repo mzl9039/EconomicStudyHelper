@@ -33,7 +33,6 @@ namespace DataHelper
             : base(enterprises, MaxDistance)
         {
             Filename = excel;
-            InitDistanceFiles();
         }
 
         public override void InitDistanceFiles()
