@@ -23,6 +23,8 @@ namespace DataHelper
             this.MaxDistance = MaxDistance;
         }
 
+        // 计算中位数，包括计算中位数的约数和快速选择算法找到精确的中位数 [5/8/2016 20:47:16 mzl]
+        #region 计算中位数
         public void CaculateMediumAndGetPointDistance(double MaxDistance)    
         {
             CountDistancesPerKilometer(MaxDistance);
@@ -48,29 +50,21 @@ namespace DataHelper
                 Parallel.For(0, EnterprisesCount, (i, loopStateOut) =>
                 {
                     Enterprise eOut = Enterprises[i];
-                    try
+                    for (int j = i + 1; j < EnterprisesCount; j++)
                     {
-                        for (int j = i + 1; j < EnterprisesCount; j++)
+                        Enterprise eIn = Enterprises[j];
+                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
+                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
+
+                        if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
+                            continue;
+                        else
                         {
-                            Enterprise eIn = Enterprises[j];
-                            double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
-                                                        (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
-
-                            if (0 == distance || (MaxDistance > 0 && distance > MaxDistance))
+                            if (!DistanceFiles.ContainsKey((int)distance))
                                 continue;
-                            else
-                            {
-                                if (!DistanceFiles.ContainsKey((int)distance))
-                                    continue;
 
-                                DistanceFiles[(int)distance].FileRowCount++;
-                            }
+                            DistanceFiles[(int)distance].FileRowCount++;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteError("距离并行计算异常中止：" + ex.ToString());
-                        loopStateOut.Stop();
                     }
                 });
                 watch.Stop();
@@ -193,6 +187,102 @@ namespace DataHelper
                 return null;
             }
         }
+        #endregion
+
+        // 计算方差 [5/8/2016 20:57:18 mzl]
+        #region 计算方差
+        /// <summary>
+        /// 计算行业内企业两两距离的方差
+        /// </summary>
+        /// <returns></returns>
+        public double CaculateStandardDeviation()
+        {
+            double averageDistance = CaculateAverageDistances(this.Enterprises);
+            return CaculateStandardDeviation(this.Enterprises, averageDistance);
+        }
+
+        /// <summary>
+        /// 计算行业内两两企业的距离的平均值
+        /// </summary>
+        /// <param name="enterprises"></param>
+        /// <returns></returns>
+        protected double CaculateAverageDistances(List<Enterprise> enterprises)
+        {
+            double averageDistance = 0.0;
+            int distanceCount = 0;
+            try
+            {
+                Parallel.For(0, enterprises.Count, (i, loopStateOut) =>
+                {
+                    Enterprise eOut = enterprises[i];
+
+                    for (int j = i + 1; j < enterprises.Count; j++)
+                    {
+                        Enterprise eIn = enterprises[j];
+                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
+                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
+
+                        if (0 == distance)
+                            continue;
+                        else
+                        {
+                            distanceCount++;
+                            averageDistance += distance;
+                        }
+                    }
+                });
+            }
+            catch (AggregateException aex)
+            {
+                for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)
+                {
+                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());
+                }
+            }
+            return averageDistance / distanceCount;
+        }
+
+        /// <summary>
+        /// 使用行业内全部企业，和距离平均值，求行业内两两企业的距离的方差
+        /// </summary>
+        /// <param name="enterprises"></param>
+        /// <param name="averageDistance"></param>
+        /// <returns></returns>
+        protected double CaculateStandardDeviation(List<Enterprise> enterprises, double averageDistance)
+        {
+            double standardDeviation = 0.0;
+            int distanceCount = 0;
+            try
+            {
+                Parallel.For(0, enterprises.Count, (i, loopStateOut) =>
+                {
+                    Enterprise eOut = enterprises[i];
+
+                    for (int j = i + 1; j < enterprises.Count; j++)
+                    {
+                        Enterprise eIn = enterprises[j];
+                        double distance = Math.Sqrt((eOut.Point.Y - eIn.Point.Y) * (eOut.Point.Y - eIn.Point.Y) +
+                                                    (eOut.Point.X - eIn.Point.X) * (eOut.Point.X - eIn.Point.X)) / 1000;
+
+                        if (0 == distance)
+                            continue;
+                        else
+                        {
+                            distanceCount++;
+                            standardDeviation += (distance - averageDistance) * (distance - averageDistance);
+                        }
+                    }
+                });
+                standardDeviation = Math.Sqrt(standardDeviation / distanceCount);
+            }
+            catch (AggregateException aex)
+            {
+                for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)                
+                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());                
+            }
+            return standardDeviation;
+        }
+        #endregion
 
         protected List<Enterprise> Enterprises { get; set; }
         // 由于每公里的距离相关信息值作为一个distanceFile

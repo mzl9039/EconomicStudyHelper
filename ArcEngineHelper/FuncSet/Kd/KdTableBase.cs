@@ -25,10 +25,7 @@ namespace DataHelper.FuncSet.Kd
             this.XValue = 0.0;
         }
 
-        protected virtual void GetEnterprises()
-        {
-
-        }
+        protected virtual void GetEnterprises() { }
 
         public virtual void GetAllEnterprises()
         {
@@ -40,24 +37,28 @@ namespace DataHelper.FuncSet.Kd
             this.Enterprises = Static.Enterprises;
         }
 
-        protected virtual void GetMedium()
-        {
+        protected virtual void GetMedium() { }
 
-        }
+        protected virtual void GetStandardDeviation() { }
 
-        protected virtual void GetKFunc()
-        {
-
-        }
+        protected virtual void GetKFunc() { }
 
         protected virtual void GetTrueValue(List<Enterprise> Enterprises)
         {
-            this.TrueValue = Kd.Func(this.KFunc, Enterprises);
+            switch (Static.kdType)
+            {
+                case KdType.KdClassic:
+                    this.TrueValue = Kd.Func(this.KFunc, Enterprises);
+                    break;
+                case KdType.KdScale:
+                    this.TrueValue = Kd.FuncScale(this.KFunc, Enterprises);
+                    break;
+                default:
+                    break;
+            }
         }
 
-        protected virtual void GetSimulateValue()
-        {
-        }
+        protected virtual void GetSimulateValue() { }
 
         /// <summary>
         /// 
@@ -103,6 +104,22 @@ namespace DataHelper.FuncSet.Kd
             }
         }
 
+        /************************************************************************/
+        /* Description:	判断真实值和模拟值是否已经计算并导出过
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
+        protected virtual bool HasCaculated(string trueValueFileName, string simulateValueFileName)
+        {
+            return (IsValueCaculated(trueValueFileName) && IsValueCaculated(simulateValueFileName));                
+        }             
+
+        /************************************************************************/
+        /* Description:	判断某个文件是否之前输出过，若这个文件存在，则认为这个
+        /*              文件代表的结果在上一次运行时已经计算过了
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
         protected virtual bool IsValueCaculated(string filename)
         {
             try

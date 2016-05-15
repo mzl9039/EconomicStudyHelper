@@ -72,6 +72,11 @@ namespace DataHelper.FuncSet.KdBase
             });
         }        
 
+        /************************************************************************/
+        /* Description:	这个函数是无数学意义的，应该被删除
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
         public void CaculateKdAllTable()
         {
             KdAllTable kdAT = new KdAllTable(this.Excels);
@@ -119,18 +124,36 @@ namespace DataHelper.FuncSet.KdBase
             Excels.ForEach(e => 
             {
                 KdEachTable kdET = new FuncSet.Kd.KdEachTable.KdEachTable(e);
-                kdET.Excels = Excels;              
-                kdET.XValue = 0;
-                kdET.CaculateParams();
-                // 重设kdET的KFunc的Di值 [3/14/2016 mzl]
-                if (kdET.KFunc != null)
-                    kdET.KFunc.Di = mediumValue;
-                kdET.CaculateTrueValue();
-                kdET.PrintTrueValue();
-                kdET.GetAllEnterprises();
-                //kdET.KFunc.Di = mediumValue;
-                kdET.CaculateSimulateValue();
-                kdET.PrintSimulateValue();
+                // 若已经计算过这个行业的真实值和模拟值，则跳过这个行业 [5/8/2016 mzl]
+                #region 被注释的原来的代码
+                //kdET.Excels = Excels;
+                //kdET.XValue = 0;
+                //kdET.CaculateParams();
+                //// 重设kdET的KFunc的Di值 [3/14/2016 mzl]
+                //if (kdET.KFunc != null)
+                //    kdET.KFunc.Di = mediumValue;
+                //kdET.CaculateTrueValue();
+                //kdET.PrintTrueValue();
+                //kdET.GetAllEnterprises();
+                ////kdET.KFunc.Di = mediumValue;
+                //kdET.CaculateSimulateValue();
+                //kdET.PrintSimulateValue();
+                #endregion
+                if (!kdET.HasCaculated())
+                {
+                    kdET.Excels = Excels;
+                    kdET.XValue = 0;
+                    kdET.CaculateParams();
+                    // 重设kdET的KFunc的Di值 [3/14/2016 mzl]
+                    if (kdET.KFunc != null)
+                        kdET.KFunc.Di = mediumValue;
+                    kdET.CaculateTrueValue();
+                    kdET.PrintTrueValue();
+                    kdET.GetAllEnterprises();
+                    //kdET.KFunc.Di = mediumValue;
+                    kdET.CaculateSimulateValue();
+                    kdET.PrintSimulateValue();
+                }                                                
             });
         }
         #endregion
@@ -145,11 +168,22 @@ namespace DataHelper.FuncSet.KdBase
                 if (cd != null)
                 {
                     KdEachTableCircleCenter kdEtCC = new KdEachTableCircleCenter(e, cd.Diameter);
-                    kdEtCC.CaculateParams();
-                    kdEtCC.CaculateTrueValue();
-                    kdEtCC.PrintTrueValue();
-                    kdEtCC.CaculateSimulateValue();
-                    kdEtCC.PrintSimulateValue();
+                    // 若已经计算过这个行业的真实值和模拟值，则跳过这个行业 [5/8/2016 mzl]
+                    #region 被注释的代码
+                    //kdEtCC.CaculateParams();
+                    //kdEtCC.CaculateTrueValue();
+                    //kdEtCC.PrintTrueValue();
+                    //kdEtCC.CaculateSimulateValue();
+                    //kdEtCC.PrintSimulateValue();
+                    #endregion
+                    if (!kdEtCC.HasCaculated())
+                    {
+                        kdEtCC.CaculateParams();
+                        kdEtCC.CaculateTrueValue();
+                        kdEtCC.PrintTrueValue();
+                        kdEtCC.CaculateSimulateValue();
+                        kdEtCC.PrintSimulateValue();
+                    }
                 }
             });
         }

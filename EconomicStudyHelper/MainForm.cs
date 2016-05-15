@@ -35,7 +35,8 @@ namespace EconomicStudyHelper
 			GlobalDataInfo.InitalGlobalDataInfo();			
 
             InitCbxFuncType();
-		    cbxFuncType.SelectedItem = ft[4];
+		    cbxFuncType.SelectedItem = funcType[4];
+            cbxKdFuncType.SelectedItem = kdFuncType[0];
 		}
 		
 		void Btn_StartClick(object sender, EventArgs e)
@@ -62,8 +63,9 @@ namespace EconomicStudyHelper
             switch (cbxFuncType.Text)
 		    {
                 case "K(d)":
-                    kdBase = new KdBase(excels.ToList());
-                    kdBase.CaculateKdAllTable();
+                    Log.WriteLog("K(d)方法对所有表的所有企业计算真实值和模拟值，无意义，被废除该方法");
+                    //kdBase = new KdBase(excels.ToList());
+                    //kdBase.CaculateKdAllTable();
                     break;
                 case "EGIndex":
                     GlobalShpInfo.InitalShpInfo();
@@ -100,12 +102,31 @@ namespace EconomicStudyHelper
 
 	    void InitCbxFuncType()
 	    {	        
-            this.cbxFuncType.Items.AddRange(ft);
+            this.cbxFuncType.Items.AddRange(funcType);
+            // 允许使用企业规模的KFunc类型 [5/8/2016 21:34:59 mzl]
+            this.cbxKdFuncType.Items.AddRange(kdFuncType);
 	    }
 
         // 各种方法集合 [3/14/2016 mzl]
         // K(d)刘晔是指K(d)EachTable方法，其中每个excel里的中位数由全部excel的中位数确定 [3/14/2016 mzl]
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
-        private string[] ft = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle" };
-	}
+        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle" };
+        // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
+        private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
+
+        private void cbxKdFuncType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cbxKdFuncType.SelectedText)
+            {
+                case "原有Kd方法":
+                    Static.kdType = KdType.KdClassic;
+                    break;
+                case "计算企业规模的Kd方法":
+                    Static.kdType = KdType.KdScale;
+                    break; 
+                default:
+                    break;
+            }
+        }
+    }
 }

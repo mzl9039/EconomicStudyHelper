@@ -27,4 +27,12 @@ namespace DataHelper
         KdEachTablbCara = 6,
         KdEachTableCircle = 7
     }
+
+    public enum KdType
+    {
+        // 原来的 Kd 函数 [5/8/2016 mzl]
+        KdClassic = 0,
+        // 对企业规模进行计算的 Kd 函数 [5/8/2016 mzl]
+        KdScale = 1
+    }
 }

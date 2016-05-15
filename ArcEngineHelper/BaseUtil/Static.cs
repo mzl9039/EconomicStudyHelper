@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Geodatabase;
 using Common;
+using DataHelper.FuncSet;
 
 namespace DataHelper.BaseUtil
 {
@@ -28,6 +29,8 @@ namespace DataHelper.BaseUtil
         public static IFields Fields = null;
 
         public static List<Enterprise> Enterprises = null;
+
+        public static KdType kdType = KdType.KdClassic;
 
         public static void ReleaseMemory()
         {

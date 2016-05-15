@@ -23,6 +23,18 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         {
             this.Diameter = diameter;
             this.CenterEnterprise = new CenterEnterprise(this.ExcelFile, diameter);
+            strTrueFileName = GetTrueFileName();
+            strSimulateFileName = GetSimulateFileName();
+        }
+
+        /************************************************************************/
+        /* Description:	判断真实值和模拟值是否已经计算并导出
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
+        public override bool HasCaculated()
+        {
+            return base.HasCaculated(strTrueFileName, strSimulateFileName);
         }
 
         public override void CaculateParams()
@@ -39,7 +51,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         public override void CaculateRandomParams()
         {
             GetRandomEnterprises();
-            GetRandomMedium();
+            //GetRandomMedium();
             GetRandomKFunc();
         }
 
@@ -155,7 +167,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             if (IsTrueValueCacualted())
                 return;
 
-            base.PrintTrueValue(GetTrueFileName());
+            base.PrintTrueValue(strTrueFileName);
         }
 
         protected override string GetSimulateFileName()
@@ -170,10 +182,15 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             if (IsSimulatedValueCaculated())
                 return;
 
-            base.PrintSimulateValue(GetSimulateFileName());
+            base.PrintSimulateValue(strSimulateFileName);
         }
 
         public double Diameter { get; private set; }
         public CenterEnterprise CenterEnterprise { get; set; }
+
+        // 真实值结果文件名 [5/8/2016 mzl]
+        private string strTrueFileName = string.Empty;
+        // 模拟值结果文件名 [5/8/2016 mzl]
+        private string strSimulateFileName = string.Empty;
     }
 }

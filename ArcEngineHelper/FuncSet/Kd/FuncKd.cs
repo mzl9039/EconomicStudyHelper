@@ -118,7 +118,12 @@ namespace DataHelper.FuncSet.Kd
     public class KFunc
     {
         public int n { get; set; }
-        public double R { get; set; }
+        // 将R换为标准差 standard deviation [5/8/2016 20:28:14 mzl]
+        #region 注释代码
+        //// R 代表3/4处距离与1/4处距离之差 [5/8/2016 20:27:47 mzl]
+        //public double R { get; set; }
+        #endregion
+        public double sd { get; set; }
         public double h { get; set; }
         // 1/2距离值
         public double Di { get; set; }
@@ -127,9 +132,15 @@ namespace DataHelper.FuncSet.Kd
         {
             this.Di = d;
             this.n = n;
-            this.R = r;
-            // 原来的 h 少乘一个R [5/8/2016 mzl]
-            this.h = 0.79 * R * Math.Pow(n, -0.2);
+            // 将R换为标准差 [5/8/2016 20:29:41 mzl]
+            //this.R = r;            
+            this.sd = r;
+            // 修改原来计算h的方法，将0.79*R替换为1.06*sd [5/8/2016 20:30:08 mzl]
+            #region 注释
+            //// 原来的 h 少乘一个R [5/8/2016 mzl]            
+            //this.h = 0.79 * R * Math.Pow(n, -0.2);
+            #endregion
+            this.h = 1.06 * sd * Math.Pow(n, -0.2);
         }
     }
 }

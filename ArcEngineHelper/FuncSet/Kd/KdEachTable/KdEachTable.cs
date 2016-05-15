@@ -22,6 +22,18 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             this.SimulateValue = new List<double>();
             this.SingleDogEnterprise = new List<Enterprise>();
             this.RandomEnterprises = new List<Enterprise>();
+            strTrueFileName = GetTrueFileName();
+            strSimulateFileName = GetSimulateFileName();
+        }
+
+        /************************************************************************/
+        /* Description:	判断真实值和模拟值是否已经计算并导出
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
+        public virtual bool HasCaculated()
+        {
+            return base.HasCaculated(strTrueFileName, strSimulateFileName);
         }
 
         public virtual void CaculateParams()
@@ -30,14 +42,18 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
                 return;
 
             GetEnterprises();
-            GetMedium();
+            // 中位数换为标准差，所以获取中位数的函数弃用 [5/8/2016 21:16:09 mzl]
+            //GetMedium();
+            GetStandardDeviation();
             GetKFunc();
         }
 
         public virtual void CaculateRandomParams()
         {
             GetRandomEnterprises();
-            GetRandomMedium();
+            // 标准差替换中位数，所以求模拟值中位数的函数弃用 [5/8/2016 21:18:55 mzl]
+            //GetRandomMedium();
+            GetRandomStandardDeviation();
             GetRandomKFunc();
         }
 
@@ -62,21 +78,39 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         {
             DataTable table = Static.Table;
             this.SingleDogEnterprise = DataProcess.ReadExcel(this.ExcelFile, table, null, FunctionType.KdEachTable);
-        }        
+        }
 
+        // 中位数换为标准差，所以这个方法弃用 [5/8/2016 21:12:02 mzl]
+        /// <summary>
+        /// 求真实值的中位数
+        /// </summary>
         protected override void GetMedium()
         {
-            FindMedium findMedium = new FindMedium(this.ExcelFile, this.SingleDogEnterprise, this.XValue);
-            findMedium.CaculateMediumAndGetPointDistance(0.0);
-            this.Medium = findMedium.Mediums;
-            this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
+            //FindMedium findMedium = new FindMedium(this.ExcelFile, this.SingleDogEnterprise, this.XValue);
+            //findMedium.CaculateMediumAndGetPointDistance(0.0);
+            //this.Medium = findMedium.Mediums;
+            //this.MediumValue = Medium.ElementAt((0 + Medium.Count) / 2).DistanceFile.Distance;
+            //KdBase.Kd_Mdl.SetN(this.SingleDogEnterprise.Count);
+        }
+
+        /// <summary>
+        /// 求真实值的标准差
+        /// </summary>
+        protected override void GetStandardDeviation()
+        {
+            FindMedium findMedium = new FindMedium(this.ExcelFile, this.SingleDogEnterprise);
+            this.TrueStandardDeviation = findMedium.CaculateStandardDeviation();
             KdBase.Kd_Mdl.SetN(this.SingleDogEnterprise.Count);
         }
 
         protected override void GetKFunc()
         {
-            int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
-            this.KFunc = new KFunc(this.SingleDogEnterprise.Count, distance, this.MediumValue);
+            #region 注释
+            // 中位数换为标准差，所以这distance不再有意义，弃用,KFunc的参数也做替换 [5/8/2016 21:13:09 mzl]
+            //int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
+            //this.KFunc = new KFunc(this.SingleDogEnterprise.Count, distance, this.MediumValue);
+            #endregion
+            this.KFunc = new KFunc(this.SingleDogEnterprise.Count, this.TrueStandardDeviation);
         }
 
         protected override string GetTrueFileName()
@@ -87,7 +121,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
 
         public virtual bool IsTrueValueCacualted()
         {
-            return IsValueCaculated(GetTrueFileName());
+            return IsValueCaculated(strTrueFileName);
         }
 
         public virtual void PrintTrueValue()
@@ -95,7 +129,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             if (IsTrueValueCacualted())
                 return;
 
-            base.PrintTrueValue(GetTrueFileName());
+            base.PrintTrueValue(strTrueFileName);
         }
         #endregion
 
@@ -111,7 +145,18 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
 
         protected override ConcurrentDictionary<int, double> GetRandomValueOnce()
         {
-            ConcurrentDictionary<int, double> randomValue = Kd.Func(this.KFunc, RandomEnterprises);
+            ConcurrentDictionary<int, double> randomValue = new ConcurrentDictionary<int, double>();
+            switch (Static.kdType)
+            {
+                case KdType.KdClassic:
+                    randomValue = Kd.Func(this.KFunc, RandomEnterprises);
+                    break;
+                case KdType.KdScale:
+                    randomValue = Kd.FuncScale(this.KFunc, RandomEnterprises);
+                    break;
+                default:
+                    break;
+            }
             return randomValue;
         }
 
@@ -130,19 +175,35 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             return RandomEnterprises;
         }
 
+        
+        //标准差替换中位数，所以这个函数充用[5 / 8 / 2016 21:18:13 mzl]
+        /// <summary>
+        /// 求模拟值的中位数，由于要用标准差替换中位数，所以这个函数弃用
+        /// </summary>
         protected virtual void GetRandomMedium()
         {
-            FindMedium findMedium = new FindMedium(this.ExcelFile, this.RandomEnterprises, this.XValue);
-            findMedium.CaculateMediumAndGetPointDistance(0.0);
-            this.Medium = findMedium.Mediums;
-            KdBase.Kd_Mdl.SetN(this.RandomEnterprises.Count);
+            //FindMedium findMedium = new FindMedium(this.ExcelFile, this.RandomEnterprises, this.XValue);
+            //findMedium.CaculateMediumAndGetPointDistance(0.0);
+            //this.Medium = findMedium.Mediums;
+            //KdBase.Kd_Mdl.SetN(this.RandomEnterprises.Count);
         }
 
+        protected virtual void GetRandomStandardDeviation()
+        {
+            FindMedium findMedium = new FindMedium(this.ExcelFile, this.RandomEnterprises);
+            RandomStandardDeviation = findMedium.CaculateStandardDeviation();
+            KdBase.Kd_Mdl.SetN(this.RandomEnterprises.Count);
+        }
+        
         protected virtual void GetRandomKFunc()
         {
-            int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
-            double oldMediumValue = this.KFunc.Di;
-            this.KFunc = new KFunc(this.RandomEnterprises.Count, distance, oldMediumValue);
+            #region 注释
+            // 用标准差替换中位数，不再使用中位数 [5/8/2016 21:22:55 mzl]
+            //int distance = this.Medium.ElementAt(this.Medium.Count - 1).DistanceFile.Distance - this.Medium.ElementAt(0).DistanceFile.Distance;
+            #endregion
+            // 每次new KFunc 时，参数Di会为0，为保留原来的Di，使用原有的di保存这个结果 [5/8/2016 21:24:16 mzl]
+            double di = this.KFunc.Di;
+            this.KFunc = new KFunc(this.RandomEnterprises.Count, RandomStandardDeviation, di);
         }
 
         protected override string GetSimulateFileName()
@@ -154,7 +215,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
 
         public virtual bool IsSimulatedValueCaculated()
         {
-            return IsValueCaculated(GetSimulateFileName());
+            return IsValueCaculated(strSimulateFileName);
         }
 
         #endregion
@@ -164,13 +225,20 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             if (IsSimulatedValueCaculated())
                 return;
 
-            base.PrintSimulateValue(GetSimulateFileName());
+            base.PrintSimulateValue(strSimulateFileName);
         }
 
         // 对当前的每一个Excel文件进行操作，ExcelFile指当前的Excel的全路径文件名
         public string ExcelFile { get; set; }
         public List<Enterprise> SingleDogEnterprise { get; set; }
-
         public List<Enterprise> RandomEnterprises { get; set; }
+        // 真实值文件名 [5/8/2016 mzl]
+        private string strTrueFileName = string.Empty;
+        // 模拟值文件名 [5/8/2016 mzl]
+        private string strSimulateFileName = string.Empty;
+        // 行业内两两企业距离的方差 [5/8/2016 21:04:24 mzl]
+        protected double TrueStandardDeviation = 0.0;
+        // 模拟值两两企业距离的方差 [5/8/2016 21:20:55 mzl]
+        protected double RandomStandardDeviation = 0.0;
     }
 }

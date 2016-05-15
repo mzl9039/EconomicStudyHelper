@@ -19,6 +19,19 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
         {
             this.Excels = excels as List<string>;
             this.SimulateValue = new List<double>();
+            // 创建文件夹，由于三个文件共用一个文件夹，只需要创建一次就够了 [5/8/2016 mzl]
+            if (!System.IO.Directory.Exists(strMediumFileName))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(strMediumFileName));
+        }
+
+        /************************************************************************/
+        /* Description:	判断真实值和模拟值是否已经计算并导出
+        /* Authon:		mzl
+        /* Date:		2016/5/8
+        /************************************************************************/
+        public virtual bool HasCaculated()
+        {
+            return base.HasCaculated(strTrueFileName, strSimulateFileName);
         }
 
         public void CaculateParams()
@@ -30,7 +43,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         public void CaculateTrueValue()
         {
-            GetTrueValue(this.Enterprises);
+            GetTrueValue(Enterprises);
         }
 
         public void CaculateSimulateValue()
@@ -54,7 +67,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         protected override string GetTrueFileName()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable真实值计算结果"));
+            FileIOInfo fileIo = new FileIOInfo(strTrueFileName);
             if (!System.IO.Directory.Exists(fileIo.FilePath))
                 System.IO.Directory.CreateDirectory(fileIo.FilePath);
             return fileIo.FullFileName; 
@@ -71,7 +84,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
 
         protected override string GetSimulateFileName()
         {
-            FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable模拟值计算结果"));
+            FileIOInfo fileIo = new FileIOInfo(strSimulateFileName);
             return fileIo.FullFileName;
         }
 
@@ -88,7 +101,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
         {
             try
             {
-                FileIOInfo fileIo = new FileIOInfo(string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "中位数"));
+                FileIOInfo fileIo = new FileIOInfo(strMediumFileName);
                 if (!Directory.Exists(fileIo.FilePath))
                     Directory.CreateDirectory(fileIo.FilePath);
 
@@ -113,6 +126,8 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
             }
         }
 
-
+        private string strMediumFileName = string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "中位数");
+        private string strTrueFileName = string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable真实值计算结果");
+        private string strSimulateFileName = string.Format("{0}\\所有表的数据\\{1}.txt", Static.SelectedPath, "KdAllTable模拟值计算结果");
     }
 }
