@@ -9,6 +9,7 @@
 using System;
 using ESRI.ArcGIS.Geometry;
 using LogHelper;
+using ESRI.ArcGIS.esriSystem;
 
 namespace DataHelper
 {
@@ -57,8 +58,10 @@ namespace DataHelper
             ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();
             // IProjectedCoordinateSystem pcs = GlobalShpInfo.SpatialReference as IProjectedCoordinateSystem;
             // point.Project(pcs);
-            point.Project(srf.CreateProjectedCoordinateSystem(2431 + (int)((point.X - 100.5) / 3)));
-            
+            point.Project(srf.CreateProjectedCoordinateSystem(102012));
+            //point.Project(srf.CreateProjectedCoordinateSystem(2431 + (int)((point.X - 100.5) / 3)));
+            //point.Project(srf.CreateProjectedCoordinateSystem(21483));
+
             return point;
 		}
 		
@@ -66,17 +69,77 @@ namespace DataHelper
 			IPoint point = new PointClass();
 			point.PutCoords(lng, lat);
 			ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();            
-            point.SpatialReference = srf.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_WGS1984);
+            point.SpatialReference = srf.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_Beijing1954);
             //point.SpatialReference = GlobalShpInfo.SpatialReference;
-            spatialReference = srf.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_Beijing1954);
-            point.Project(spatialReference);
+            //spatialReference = srf.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_Beijing1954);
+            //point.Project(spatialReference);
             
             return point;
-		}
+		}        
 
+        // <summary>
+        /// 从地理坐标转换到投影坐标
+        /// </summary>
+        /// <param name="longitude">经度</param>
+        /// <param name="latitude">纬度，南半球为负数</param>
+        /// <param name="x">X</param>
+        /// <param name="y">Y</param>
+        /// <param name="zone">带区（1-60，从-180到+180，6度带）</param>
+        public static void GeoToPrj(double longitude, double latitude, out double x, out double y, out int zone)
+        {
+            ISpatialReferenceFactory pSpatialReferenceFactory = new SpatialReferenceEnvironmentClass();
+            IGeographicCoordinateSystem pGeoCoordSys = pSpatialReferenceFactory.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_WGS1984);
+            int startprjnum = 32601;
+            if (latitude < 0) startprjnum = 32701;
+            zone = (int)Math.Round(((longitude + 3) / 6)) + 30;
+            int prjnum = startprjnum + zone - 1;
+            //IProjectedCoordinateSystem pPrjCoordSys = pSpatialReferenceFactory.CreateProjectedCoordinateSystem(prjnum);
+            IProjectedCoordinateSystem pPrjCoordSys = pSpatialReferenceFactory.CreateProjectedCoordinateSystem(32649);
 
+            IPoint pt = new PointClass();
+            pt.PutCoords(longitude, latitude);
+            IGeometry geo = (IGeometry)pt;
+            geo.SpatialReference = pGeoCoordSys;
+            geo.Project(pPrjCoordSys);
+            x = pt.X;
+            y = pt.Y;
+            if (latitude < 0)
+                y = 0 - y;
+        }
+        /// <summary>
+        /// 从投影坐标转换到地理坐标
+        /// </summary>
+        /// <param name="x">X</param>
+        /// <param name="y">Y，南半球为负数</param>
+        /// <param name="zone">带区（1-60，从-180到+180，6度带）</param>
+        /// <param name="longitude">经度</param>
+        /// <param name="latitude">纬度</param>
+        public static void PrjToGeo(double x, double y, int zone, out double longitude, out double latitude)
+        {
+            ISpatialReferenceFactory pSpatialReferenceFactory = new SpatialReferenceEnvironmentClass();
+            IGeographicCoordinateSystem pGeoCoordSys = pSpatialReferenceFactory.CreateGeographicCoordinateSystem((int)esriSRGeoCSType.esriSRGeoCS_WGS1984);
+            int startprjnum = 32601;
+            bool South = false;
+            if (y < 0)
+            {
+                South = true;
+                y = 0 - y;
+            }
+            if (South) startprjnum = 32701;
+            int prjnum = startprjnum + zone - 1;
+            IProjectedCoordinateSystem pPrjCoordSys = pSpatialReferenceFactory.CreateProjectedCoordinateSystem(prjnum);
 
-		public static bool IsPointValid(IPoint point, IGeometry geo) {
+            IPoint pt = new PointClass();
+            pt.PutCoords(x, y);
+            IGeometry geo = pt as IGeometry;
+            geo.SpatialReference = pPrjCoordSys;
+            geo.Project(pGeoCoordSys);
+            longitude = pt.X;
+            latitude = pt.Y;
+            if (South) latitude = 0 - latitude;
+        }
+
+        public static bool IsPointValid(IPoint point, IGeometry geo) {
 			bool result = false;
 			try {
 				IGeometry geoPoint = point as IGeometry;

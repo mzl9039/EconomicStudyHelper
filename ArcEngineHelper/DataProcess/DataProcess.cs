@@ -68,14 +68,23 @@ namespace DataHelper
                     double lat = double.Parse(dr["Latitude"].ToString());
                     double lng = double.Parse(dr["Longitude"].ToString());
 
+                    int zone = 0;
+                    // 方法一、原来的代码 [6/5/2016 0:57:15 mzl]
                     IPoint point = ExcelToShp.CastPointByFunctionType(lng, lat, ft);
+                    // 方法二、利用WKSPoint [6/5/2016 0:58:11 mzl]
+                    //IPoint point = ExcelToShp.GCS2PRJ(lng, lat);
+                    // 方法三、网上抄的代码 [6/5/2016 0:58:34 mzl]
+                    double x = 0, y = 0;
+                    //ExcelToShp.GeoToPrj(lng, lat, out x, out y, out zone);
+                    IPoint newpoint = new PointClass();
+                    newpoint.PutCoords(point.X, point.Y);
 
                     if (pointCheckGeo != null && !ExcelToShp.IsPointValid(point, pointCheckGeo))
                         continue;
 
                     string id = fileIO.FileNameWithoutExt + "." + dr["ID"].ToString();
 
-                    Enterprise e = new Enterprise(id, point, man + woman);
+                    Enterprise e = new Enterprise(id, newpoint, man + woman, new Common.Point(lng, lat, zone));
                     enterprises.Add(e);
                 }
                 table.Clear(); table = null;
@@ -153,6 +162,69 @@ namespace DataHelper
 
             result.Sort((x, y) => int.Parse(x.EnterpriseCode).CompareTo(int.Parse(y.EnterpriseCode)));
             return result;
+        }
+
+        public static List<MultiCircleDiameters> ReadMultiCircleDiameter(string filename, DataTable t)
+        {
+            List<MultiCircleDiameters> result = new List<MultiCircleDiameters>();
+            FileIOInfo fileIO = new FileIOInfo(filename);
+            IExcelOp excelReader = ExcelOp.GetExcelReader(filename);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            excelReader.SetTable = t;
+
+            try
+            {
+                DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
+                if (table == null)
+                {
+                    Log.WriteError("读取 Excel 文件：" + filename + "失败！");
+                    return null;
+                }
+                result = table.AsEnumerable().AsParallel()
+                    .Select(r => new MultiCircleDiameters(
+                        r.Field<string>("id"), 
+                        new List<double>() {
+                            r.Field<double>("first_dm"),
+                            r.Field<double>("second_dm")
+                        }, 
+                        r.Field<double>("density")))
+                        .ToList();
+                table.Clear(); table = null;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                throw;
+            }
+            stopwatch.Stop();
+            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+
+            result.Sort((x, y) => int.Parse(x.EnterpriseCode).CompareTo(int.Parse(y.EnterpriseCode)));
+            return result;
+        }
+
+        public static DataTable ReadEnterpriseDistributedInCountryExcel(String filename, DataTable table)
+        {
+            FileIOInfo fileIO = new FileIOInfo(filename);
+            IExcelOp excelReader = ExcelOp.GetExcelReader(filename);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            excelReader.SetTable = table;
+
+            try
+            {
+                table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
+            }
+            catch (System.Exception ex)
+            {
+                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                throw;
+            }
+
+            stopwatch.Stop();
+            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            return table;
         }
 
         /// <summary>

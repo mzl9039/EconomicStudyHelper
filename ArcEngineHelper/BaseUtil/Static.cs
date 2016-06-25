@@ -30,7 +30,11 @@ namespace DataHelper.BaseUtil
 
         public static List<Enterprise> Enterprises = null;
 
+        public static FunctionType funcType = FunctionType.Default;
+
         public static KdType kdType = KdType.KdClassic;
+
+        public static DensityType densityType = DensityType.Diameter;
 
         public static void ReleaseMemory()
         {

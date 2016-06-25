@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using ESRI.ArcGIS.Geodatabase;
 
 namespace DataHelper.FuncSet.KdBase
 {
@@ -19,7 +20,11 @@ namespace DataHelper.FuncSet.KdBase
         public KdBase(IEnumerable<string> excels)
         {
             Excels = excels as List<string>;
-            Kd_Mdl.SetSimulateTimes();
+            // 根据方法类型，确定是否设置模拟值
+            if (Static.funcType == FunctionType.Kd || Static.funcType == FunctionType.KdEachTable
+                || Static.funcType == FunctionType.KdEachTablbCara || Static.funcType == FunctionType.KdEachTableCircle
+                || Static.funcType == FunctionType.KdEachTableMultiCircle)
+                Kd_Mdl.SetSimulateTimes();
             //GetMaxDistances();       
         }
 
@@ -53,6 +58,36 @@ namespace DataHelper.FuncSet.KdBase
                 filename = ofd.FileName;
             }
             CircleDiameters = DataProcess.ReadExcelCircleDiameter(filename, table) as List<CircleDiameter>;
+        }
+
+        public void GetMultiCircleDiameters()
+        {
+            DataTable table = Static.TableDiametar;
+            string filename = string.Empty;
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "打开企业代码与直径文件";
+            ofd.Filter = "直径 | *.xlsx";
+            ofd.Multiselect = false;
+            ofd.RestoreDirectory = true;
+            if (ofd.ShowDialog() == DialogResult.OK)            
+                filename = ofd.FileName;
+
+            MultiDiameters = DataProcess.ReadMultiCircleDiameter(filename, table) as List<MultiCircleDiameters>;
+        }
+
+        public DataTable GetEnterpriseInCountry(DataTable table)
+        {
+            string filename = string.Empty;
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "打开中国县界表";
+            ofd.Filter = "直径 | *.xlsx";
+            ofd.Multiselect = false;
+            ofd.RestoreDirectory = true;
+            if (ofd.ShowDialog() == DialogResult.OK)
+                filename = ofd.FileName;
+
+            table = DataProcess.ReadEnterpriseDistributedInCountryExcel(filename, table);
+            return table;
         }
 
         public void CaculateKdEachTable()
@@ -188,10 +223,38 @@ namespace DataHelper.FuncSet.KdBase
             });
         }
         #endregion
-        
+
+        #region 对多圆单圆情况进行计算，多圆直接计算，单圆要查找可能的其它的圆
+        public void CaculateKdEachTableMultiCircleCenter()
+        {
+            //GlobalShpInfo.InitalShpInfo();
+            string shpFileName = DataPreProcess.GetShpName("选择中国县界shp");
+            IFeatureClass shpFeatureClass = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(shpFileName);
+            DataTable table = DataPreProcess.GenerateEnterpriseInCountryTable(shpFeatureClass);
+            DataTable excelTable = GetEnterpriseInCountry(table);
+           
+            Excels.ForEach(e =>
+            {
+                FileIOInfo fileIo = new FileIOInfo(e);
+                MultiCircleDiameters mcd = this.MultiDiameters.Find(x => fileIo.FileName.Contains(x.EnterpriseCode));
+                if (mcd != null)
+                {
+                    KdEachTableMultiCircleCenter kdetmcc = new KdEachTableMultiCircleCenter(e, mcd);
+                    kdetmcc.CaculateParams();
+                    kdetmcc.CaculateCircleEnterprise();
+                    kdetmcc.PrintCircleEnterprise();
+                    //kdetmcc.FindEnterpriseDistribution();
+                    kdetmcc.SetEnterpriseNumsInCountry(ref table, shpFeatureClass);
+                }
+            });
+        }
+        #endregion
+
         public List<string> Excels { get; set; }
         public List<KdMaxDistance> MaxDistances { get; set; }
-
+        // 单圆直径 [5/15/2016 16:45:58 mzl]
         public List<CircleDiameter> CircleDiameters { get; set; }
+        // 可能有多个圆的直径 [5/15/2016 16:49:12 mzl]
+        public List<MultiCircleDiameters> MultiDiameters { get; set; }
     }
 }

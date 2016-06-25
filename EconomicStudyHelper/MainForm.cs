@@ -35,8 +35,9 @@ namespace EconomicStudyHelper
 			GlobalDataInfo.InitalGlobalDataInfo();			
 
             InitCbxFuncType();
-		    cbxFuncType.SelectedItem = funcType[4];
+		    cbxFuncType.SelectedItem = funcType[funcType.Length - 1];
             cbxKdFuncType.SelectedItem = kdFuncType[0];
+            cb_densityType.SelectedItem = densityType[0];
 		}
 		
 		void Btn_StartClick(object sender, EventArgs e)
@@ -56,7 +57,6 @@ namespace EconomicStudyHelper
             catch (Exception ex)
             {
                 Log.WriteError(ex.ToString());
-                //throw ex;
             }
             KdBase kdBase;
 
@@ -68,11 +68,13 @@ namespace EconomicStudyHelper
                     //kdBase.CaculateKdAllTable();
                     break;
                 case "EGIndex":
+                    // 这里的代码不能使用了，因为InitalShpInfo里生成的Fields不符合要求了 [5/22/2016 16:33:37 mzl]
                     GlobalShpInfo.InitalShpInfo();
                     EGIndex eg = new EGIndex(excels.ToList());
                     eg.OutPutEGIndex();
                     break;
                 case "EGRobust":
+                    // 这里的代码不能使用了，因为InitalShpInfo里生成的Fields不符合要求了 [5/22/2016 16:33:37 mzl]
                     GlobalShpInfo.InitalShpInfo();
                     EGRobust egRobust = new EGRobust(excels.ToList());
                     egRobust.OutPutEGIndex();
@@ -93,6 +95,12 @@ namespace EconomicStudyHelper
                     kdBase.GetCircleeDiameters();
                     kdBase.CaculateKdEachTableByCircle();
                     break;
+                case "K(d)单圆多圆":                    
+                    Static.TableDiametar = DataPreProcess.GenerateIndustryDiameterTable();
+                    kdBase = new KdBase(excels.ToList());
+                    kdBase.GetMultiCircleDiameters();
+                    kdBase.CaculateKdEachTableMultiCircleCenter();
+                    break;
                 default:
                     break;
 		    }
@@ -105,15 +113,19 @@ namespace EconomicStudyHelper
             this.cbxFuncType.Items.AddRange(funcType);
             // 允许使用企业规模的KFunc类型 [5/8/2016 21:34:59 mzl]
             this.cbxKdFuncType.Items.AddRange(kdFuncType);
+            // 计算多圆时允许设置相应的浓度计算类型 [5/15/2016 22:13:29 mzl]
+            this.cb_densityType.Items.AddRange(densityType);
 	    }
 
         // 各种方法集合 [3/14/2016 mzl]
         // K(d)刘晔是指K(d)EachTable方法，其中每个excel里的中位数由全部excel的中位数确定 [3/14/2016 mzl]
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
-        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle" };
+        //  [5/15/2016 16:22:36 mzl]
+        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆" };
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
         private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
 
+        private string[] densityType = new string[] { "半径浓度", "人口浓度" };
         private void cbxKdFuncType_SelectedIndexChanged(object sender, EventArgs e)
         {
             switch (cbxKdFuncType.SelectedText)
@@ -124,6 +136,51 @@ namespace EconomicStudyHelper
                 case "计算企业规模的Kd方法":
                     Static.kdType = KdType.KdScale;
                     break; 
+                default:
+                    break;
+            }
+        }
+
+        private void cb_densityType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cb_densityType.Text.ToString())
+            {
+                case "半径浓度":
+                    Static.densityType = DensityType.Diameter;
+                    break;
+                case "人口浓度":
+                    Static.densityType = DensityType.Scale;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void cbxFuncType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cbxFuncType.SelectedText)
+            {
+                case "K(d)":
+                    Static.funcType = FunctionType.Kd;
+                    break;
+                case "EGIndex":
+                    Static.funcType = FunctionType.EGIndex;
+                    break;
+                case "EGRobust":
+                    Static.funcType = FunctionType.EGIndexRobust;                    
+                    break;
+                case "K(d)EachTable距离特征值":
+                    Static.funcType = FunctionType.KdEachTable;
+                    break;
+                case "K(d)Cara":
+                    Static.funcType = FunctionType.KdEachTablbCara;
+                    break;
+                case "K(d)Circle":
+                    Static.funcType = FunctionType.KdEachTableCircle;
+                    break;
+                case "K(d)单圆多圆":
+                    Static.funcType = FunctionType.KdEachTableMultiCircle;
+                    break;
                 default:
                     break;
             }

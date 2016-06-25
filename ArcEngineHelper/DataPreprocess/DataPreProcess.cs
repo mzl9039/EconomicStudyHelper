@@ -9,6 +9,7 @@ using ESRI.ArcGIS.DataSourcesFile;
 using System.Data;
 using LogHelper;
 using System.Windows.Forms;
+using ESRI.ArcGIS.ADF;
 
 namespace DataHelper
 {
@@ -167,6 +168,71 @@ namespace DataHelper
 
             table.Columns.Add(en);
             table.Columns.Add(dm);
+
+            return table;
+        }
+
+        // 要搜索的企业的圆的直径可能有两个，另外还有浓度 [5/15/2016 16:37:54 mzl]
+        public static DataTable GenerateIndustryDiameterTable()
+        {
+            DataTable table = new DataTable();
+
+            DataColumn industryId = new DataColumn();
+            industryId.ColumnName = "id";
+            industryId.DataType = System.Type.GetType("System.String");
+
+            DataColumn firstDiameter = new DataColumn();
+            firstDiameter.ColumnName = "first_dm";
+            firstDiameter.DataType = System.Type.GetType("System.Double");
+
+            DataColumn secondDiameter = new DataColumn();
+            secondDiameter.ColumnName = "second_dm";
+            secondDiameter.DataType = System.Type.GetType("System.Double");
+
+            DataColumn density = new DataColumn();
+            density.ColumnName = "density";
+            density.DataType = System.Type.GetType("System.Double");
+
+            table.Columns.Add(industryId);
+            table.Columns.Add(firstDiameter);
+            table.Columns.Add(secondDiameter);
+            table.Columns.Add(density);
+            return table;
+        }
+
+        public static DataTable GenerateEnterpriseInCountryTable(IFeatureClass featureClass)
+        {
+            DataTable table = new DataTable();
+
+            DataColumn name = new DataColumn();
+            name.ColumnName = "name";
+            name.DataType = System.Type.GetType("System.String");
+            table.Columns.Add(name);
+
+            try
+            {
+                using (ComReleaser comReleaser = new ComReleaser())
+                {
+                    IFeatureCursor cursor = Geodatabase.GeodatabaseOp.QuerySearch(featureClass, null, null, false);
+                    comReleaser.ManageLifetime(cursor);
+                    int idx = featureClass.Fields.FindField("NAME");
+                    String country = "";
+                    IFeature feature;
+                    while ((feature = cursor.NextFeature()) != null)
+                    {
+                        country = feature.Value[idx].ToString();
+                        DataColumn dt = new DataColumn();
+                        dt.ColumnName = country.ToString();
+                        dt.DataType = System.Type.GetType("System.String");
+                        table.Columns.Add(dt);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Log.WriteError(ex.Message);
+                throw ex;
+            }            
 
             return table;
         }

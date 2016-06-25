@@ -41,11 +41,13 @@ namespace EconomicStudyHelper
             this.label1 = new System.Windows.Forms.Label();
             this.lbl_kd = new System.Windows.Forms.Label();
             this.cbxKdFuncType = new System.Windows.Forms.ComboBox();
+            this.lbl_densityType = new System.Windows.Forms.Label();
+            this.cb_densityType = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // btn_Start
             // 
-            this.btn_Start.Location = new System.Drawing.Point(108, 100);
+            this.btn_Start.Location = new System.Drawing.Point(108, 133);
             this.btn_Start.Name = "btn_Start";
             this.btn_Start.Size = new System.Drawing.Size(75, 23);
             this.btn_Start.TabIndex = 0;
@@ -60,6 +62,7 @@ namespace EconomicStudyHelper
             this.cbxFuncType.Name = "cbxFuncType";
             this.cbxFuncType.Size = new System.Drawing.Size(121, 20);
             this.cbxFuncType.TabIndex = 1;
+            this.cbxFuncType.SelectedIndexChanged += new System.EventHandler(this.cbxFuncType_SelectedIndexChanged);
             // 
             // label1
             // 
@@ -88,11 +91,31 @@ namespace EconomicStudyHelper
             this.cbxKdFuncType.TabIndex = 4;
             this.cbxKdFuncType.SelectedIndexChanged += new System.EventHandler(this.cbxKdFuncType_SelectedIndexChanged);
             // 
+            // lbl_densityType
+            // 
+            this.lbl_densityType.AutoSize = true;
+            this.lbl_densityType.Location = new System.Drawing.Point(37, 112);
+            this.lbl_densityType.Name = "lbl_densityType";
+            this.lbl_densityType.Size = new System.Drawing.Size(65, 12);
+            this.lbl_densityType.TabIndex = 5;
+            this.lbl_densityType.Text = "浓度类型：";
+            // 
+            // cb_densityType
+            // 
+            this.cb_densityType.FormattingEnabled = true;
+            this.cb_densityType.Location = new System.Drawing.Point(108, 104);
+            this.cb_densityType.Name = "cb_densityType";
+            this.cb_densityType.Size = new System.Drawing.Size(121, 20);
+            this.cb_densityType.TabIndex = 6;
+            this.cb_densityType.SelectedIndexChanged += new System.EventHandler(this.cb_densityType_SelectedIndexChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 149);
+            this.ClientSize = new System.Drawing.Size(292, 183);
+            this.Controls.Add(this.cb_densityType);
+            this.Controls.Add(this.lbl_densityType);
             this.Controls.Add(this.cbxKdFuncType);
             this.Controls.Add(this.lbl_kd);
             this.Controls.Add(this.label1);
@@ -109,5 +132,7 @@ namespace EconomicStudyHelper
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lbl_kd;
         private System.Windows.Forms.ComboBox cbxKdFuncType;
+        private System.Windows.Forms.Label lbl_densityType;
+        private System.Windows.Forms.ComboBox cb_densityType;
     }
 }

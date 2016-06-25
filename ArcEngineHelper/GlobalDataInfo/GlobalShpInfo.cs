@@ -19,9 +19,7 @@ namespace DataHelper
 	/// Description of CreateShpfile.
 	/// </summary>
 	public class GlobalShpInfo
-	{
-
-		
+	{		
 		// 定义生成shp的字段名
 		//public static IFields Fields = null;
 
@@ -30,7 +28,9 @@ namespace DataHelper
 		
 		public static void InitalShpInfo(){
 			Static.SpatialReference = GetSpatialReferenceFromShp();
-            Static.Fields = GeneratePointFields();
+            // 这里的IFieds需要是生成的圆的shp，所以需要的Fields更改了，要是EGIndex需要Fields，需要使用下面的注释代码 [5/22/2016 16:34:00 mzl]
+            //Static.Fields = GeneratePointFields();
+            //Static.Fields = GenerateCircleFields();
 			shpWSF = new ShapefileWorkspaceFactoryClass();				
 		}
 
@@ -159,6 +159,67 @@ namespace DataHelper
             fieldsEdit.AddField(oidField);
             fieldsEdit.AddField(excelId);
             fieldsEdit.AddField(man);
+
+            return fields;
+        }
+
+        public static IFields GenerateCircleFields()
+        {
+            IFields fields = new FieldsClass();
+            IFieldsEdit fieldsEdit = fields as IFieldsEdit;
+
+            // 定义shape字段
+            IGeometryDef geoDef = new GeometryDefClass();
+            IGeometryDefEdit geometryDefEdit = geoDef as IGeometryDefEdit;
+            geometryDefEdit.AvgNumPoints_2 = 1;
+            geometryDefEdit.GridCount_2 = 0;
+            geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPolygon;
+
+            IField shapeField = new FieldClass();
+            IFieldEdit shapeFieldEdit = shapeField as IFieldEdit;
+            shapeFieldEdit.Name_2 = "SHAPE";
+            shapeFieldEdit.IsNullable_2 = true;
+            shapeFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry;
+            shapeFieldEdit.GeometryDef_2 = geoDef;
+            shapeFieldEdit.Required_2 = true;
+            geometryDefEdit.SpatialReference_2 = Static.SpatialReference;
+
+            IField oidField = new FieldClass();
+            IFieldEdit oidFieldEdit = oidField as IFieldEdit;
+            oidFieldEdit.Name_2 = "ObjectID";
+            oidFieldEdit.AliasName_2 = "FID";
+            oidFieldEdit.Type_2 = esriFieldType.esriFieldTypeOID;
+
+            IField circleId = new FieldClass();
+            IFieldEdit circleIdEdit = circleId as IFieldEdit;
+            circleIdEdit.Name_2 = "CircleId";
+            circleIdEdit.AliasName_2 = "圆心企业ID";
+            circleIdEdit.Type_2 = esriFieldType.esriFieldTypeString;
+
+            IField diameter = new FieldClass();
+            IFieldEdit diameterEdit = diameter as IFieldEdit;
+            diameterEdit.Name_2 = "Diameter";
+            diameterEdit.AliasName_2 = "圆直径";
+            diameterEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            IField numDensity = new FieldClass();
+            IFieldEdit numDensityEdit = numDensity as IFieldEdit;
+            numDensityEdit.Name_2 = "NumDensity";
+            numDensityEdit.AliasName_2 = "企业数量浓度";
+            numDensityEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            IField scaleDensity = new FieldClass();
+            IFieldEdit scaleDensityEdit = scaleDensity as IFieldEdit;
+            scaleDensityEdit.Name_2 = "ScaleDensity";
+            scaleDensityEdit.AliasName_2 = "企业规模浓度";
+            scaleDensityEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            fieldsEdit.AddField(shapeField);
+            fieldsEdit.AddField(oidField);
+            fieldsEdit.AddField(circleId);
+            fieldsEdit.AddField(diameter);
+            fieldsEdit.AddField(numDensity);
+            fieldsEdit.AddField(scaleDensity);
 
             return fields;
         }

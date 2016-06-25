@@ -62,6 +62,7 @@
     <Compile Include="Data\FileIOInfo.cs" />
     <Compile Include="Data\KdMaxDistance.cs" />
     <Compile Include="Data\MediumInfo.cs" />
+    <Compile Include="Data\MultiCircleDiameters.cs" />
     <Compile Include="Data\Point.cs" />
     <Compile Include="Data\TwoPointsDistance.cs" />
     <Compile Include="ExcelOp\Excel03.cs" />

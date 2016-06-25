@@ -16,16 +16,18 @@ namespace Common
 	/// </summary>
 	public class Enterprise
 	{
-		public Enterprise(string id, IPoint getPoint, int manNum) {
+		public Enterprise(string id, IPoint getPoint, int manNum, Point point = null) {
 			ID = id;
-		    GeoPoint = getPoint;
-            Point = new Point(GeoPoint.X, GeoPoint.Y);
-			man = manNum;
+            GeoPoint = getPoint;
+            Point = new Point(getPoint.X, getPoint.Y);
+            LngLat = point;
+            man = manNum;
 		}
 		
 		public string ID { get; set; }
-	    public Point Point { get; set; }
+	    public Point LngLat { get; set; }
 		public int man { get; set; }
-        public IPoint GeoPoint { get; set; }
+        public IPoint GeoPoint { get; set; }    
+        public Point Point { get; private set; }  
     }
 }

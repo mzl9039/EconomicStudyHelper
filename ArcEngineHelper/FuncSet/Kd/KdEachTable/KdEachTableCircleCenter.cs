@@ -51,7 +51,16 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         public override void CaculateRandomParams()
         {
             GetRandomEnterprises();
-            //GetRandomMedium();
+            switch (Static.kdType)
+            {
+                case KdType.KdClassic:
+                    GetRandomMedium();
+                    break;
+                case KdType.KdScale:
+                    break;
+                default:
+                    break;
+            }
             GetRandomKFunc();
         }
 

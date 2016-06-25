@@ -25,7 +25,8 @@ namespace DataHelper
         EGIndexRobust = 4,
         KdEachTable = 5,
         KdEachTablbCara = 6,
-        KdEachTableCircle = 7
+        KdEachTableCircle = 7,
+        KdEachTableMultiCircle = 8
     }
 
     public enum KdType
@@ -34,5 +35,13 @@ namespace DataHelper
         KdClassic = 0,
         // 对企业规模进行计算的 Kd 函数 [5/8/2016 mzl]
         KdScale = 1
+    }
+
+    public enum DensityType
+    {
+        // 以圆的半径来计算浓度 [5/15/2016 21:52:10 mzl]
+        Diameter = 0,
+        // 以圆内企业的总人数来计算浓度 [5/15/2016 21:52:35 mzl]
+        Scale = 1
     }
 }
