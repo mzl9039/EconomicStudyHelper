@@ -283,7 +283,6 @@ namespace DataHelper.FuncSet.KdBase
         #region 计算就业人口
         public void CaculateHIndex()
         {
-            string shpName = DataPreProcess.GetShpName("选择shp文件");
             string filename = string.Format("{0}\\{1}.txt", Static.SelectedPath, "H指数");
             if (System.IO.File.Exists(filename))
             {
@@ -299,6 +298,33 @@ namespace DataHelper.FuncSet.KdBase
                     double result = kdET.CaculateManRatioInEnterprise();
                     System.IO.FileInfo fi = new FileInfo(kdET.ExcelFile);
                     sw.WriteLine(string.Format("{0}:\t{1}", fi.Name, result));
+                });
+                sw.Close();
+            }
+        }
+        #endregion
+
+        #region 分区域计算就业人口
+        // 分区域计算H指数 [8/24/2016 8:37:43 mzl]
+        public void CaculateHIndexByArea()
+        {
+            string shpName = DataPreProcess.GetShpName("选择shp文件");
+            Static.SpatialReference = GlobalShpInfo.GetSpatialReferenceFromShp(shpName);
+            string filename = string.Format("{0}\\{1}.txt", Static.SelectedPath, "H指数By行政区");
+            if (System.IO.File.Exists(filename))
+            {
+                File.Delete(filename);
+            }
+            using (FileStream fs = new System.IO.FileStream(filename, FileMode.CreateNew))
+            {
+                StreamWriter sw = new StreamWriter(fs);
+                Excels.ForEach(e =>
+                {
+                    KdEachTable kdET = new FuncSet.Kd.KdEachTable.KdEachTable(e);
+                    kdET.GetPublicEnterprises();
+                    List<string> result = kdET.CaculateManRatioInEnterpriseByArea(shpName);
+                    System.IO.FileInfo fi = new FileInfo(kdET.ExcelFile);
+                    result.ForEach(r => sw.WriteLine(string.Format("{0}:\t{1}", fi.Name, r)));
                 });
                 sw.Close();
             }

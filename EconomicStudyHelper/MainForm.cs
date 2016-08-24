@@ -105,7 +105,11 @@ namespace EconomicStudyHelper
                 case "H指数":
                     kdBase = new KdBase(excels.ToList());
                     kdBase.CaculateHIndex();
-                    break; 
+                    break;
+                case "分区域H指数":
+                    kdBase = new KdBase(excels.ToList());
+                    kdBase.CaculateHIndexByArea();
+                    break;
                 default:
                     break;
 		    }
@@ -128,7 +132,7 @@ namespace EconomicStudyHelper
         // K(d)刘晔是指K(d)EachTable方法，其中每个excel里的中位数由全部excel的中位数确定 [3/14/2016 mzl]
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
         //  [5/15/2016 16:22:36 mzl]
-        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数" };
+        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数", "分区域H指数" };
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
         private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
 

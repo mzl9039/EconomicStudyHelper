@@ -34,11 +34,11 @@ namespace DataHelper
 			shpWSF = new ShapefileWorkspaceFactoryClass();				
 		}
 
-        public static ISpatialReference GetSpatialReferenceFromShp()
+        public static ISpatialReference GetSpatialReferenceFromShp(string shpfile = null)
         {
             ISpatialReference spatialReference = null;
             string title = "导入包含正确坐标系信息的shp";
-            string shpName = DataPreProcess.GetShpName(title);
+            string shpName = shpfile == null ? DataPreProcess.GetShpName(title) : shpfile;
             if (shpName == null)
             {
                 Log.Log.Info("获取的shp文件名为空");

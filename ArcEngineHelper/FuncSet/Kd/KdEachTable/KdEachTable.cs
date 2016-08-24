@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.ADF;
+using ESRI.ArcGIS.Geometry;
 
 namespace DataHelper.FuncSet.Kd.KdEachTable
 {
@@ -113,6 +114,30 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             double result = 0.0;
             double sumOfMan = this.SingleDogEnterprise.Sum(e => e.man);
             result = this.SingleDogEnterprise.Sum(e => Math.Pow(1.0 * e.man / sumOfMan, 2));
+            return result;
+        }
+
+        public List<string> CaculateManRatioInEnterpriseByArea(string shpName)
+        {
+            List<string> result = new List<string>();
+            IFeatureClass area = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(shpName);
+            IFeatureCursor cursor = area.Search(null, false);
+            IFeature feature;
+            List<Enterprise> enterprises = new List<Enterprise>();
+            while ((feature = cursor.NextFeature()) != null)
+            {
+                this.SingleDogEnterprise.ForEach(e =>
+                {
+                    IRelationalOperator relational = feature.Shape as IRelationalOperator;
+                    if (relational.Contains(e.GeoPoint))
+                        enterprises.Add(e);                                        
+                });
+                double sumOfMan = enterprises.Sum(e => e.man);
+                double HIndex = enterprises.Sum(e => Math.Pow(1.0 * e.man / sumOfMan, 2));
+                string areaName = feature.Value[feature.Fields.FindField("NAME")].ToString();
+                result.Add(string.Format("{0}\t{1}", areaName, HIndex));
+            }
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(cursor);
             return result;
         }
 
