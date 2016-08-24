@@ -1,7 +1,7 @@
 ﻿using Common;
 using Common.Data;
 using DataHelper.BaseUtil;
-using LogHelper;
+// using LogHelper;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -68,13 +68,13 @@ namespace DataHelper
                     }
                 });
                 watch.Stop();
-                Log.WriteLog("CountDistancesPerKilometer:运行时间：" + (watch.ElapsedMilliseconds / 1000));
+                Log.Log.Info("CountDistancesPerKilometer:运行时间：" + (watch.ElapsedMilliseconds / 1000));
             }
             catch (AggregateException aex)
             {
                 for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)
                 {
-                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());
+                    Log.Log.Error(aex.Flatten().InnerExceptions[i].InnerException.ToString());
                 }
             }       
         }
@@ -114,7 +114,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 throw;
             }
         }
@@ -143,7 +143,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
             }
         }
@@ -182,7 +182,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
                 return null;
             }
@@ -236,7 +236,7 @@ namespace DataHelper
             {
                 for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)
                 {
-                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());
+                    Log.Log.Error(aex.Flatten().InnerExceptions[i].InnerException.ToString());
                 }
             }
             return averageDistance / distanceCount;
@@ -278,7 +278,7 @@ namespace DataHelper
             catch (AggregateException aex)
             {
                 for (int i = 0; i < aex.Flatten().InnerExceptions.Count; i++)                
-                    Log.WriteError(aex.Flatten().InnerExceptions[i].InnerException.ToString());                
+                    Log.Log.Error(aex.Flatten().InnerExceptions[i].InnerException.ToString());                
             }
             return standardDeviation;
         }
@@ -292,7 +292,7 @@ namespace DataHelper
 
         public virtual void InitDistanceFiles()
         {
-            Log.WriteLog("初始化DistanceFiles");
+            Log.Log.Info("初始化DistanceFiles");
             DistanceFiles = new ConcurrentDictionary<int, DistanceFile>();
             string filename = System.IO.Path.Combine(Static.SelectedPath, Const.AllCaculatedPath + ".txt");
             FileIOInfo fio = new FileIOInfo(filename);

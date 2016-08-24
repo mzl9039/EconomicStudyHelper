@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
 using Common;
-using LogHelper;
+// using LogHelper;
 using MapEdit;
 using System.Threading;
 using System.Collections;
@@ -52,7 +52,7 @@ namespace DataHelper.FuncSet.EGIndex
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
                 return false;
             }
@@ -133,7 +133,7 @@ namespace DataHelper.FuncSet.EGIndex
                     }
                     catch (Exception ex)
                     {
-                        Log.WriteError(ex.ToString());
+                        Log.Log.Error(ex.ToString());
                         //throw ex;
                         return null;
                     }
@@ -141,7 +141,7 @@ namespace DataHelper.FuncSet.EGIndex
                     kv.Value.PartEGa = SumSaiSi / (1 - SumSi);
                     string str = (egType == EGType.EGIndex) ? "文件的EG指标结果为：" : "文件的E指标Robust检查结果为：";
 
-                    Log.WriteLog("文件" + kv.Value.Excel + "计算用时：" + stopwatch.ElapsedMilliseconds / 1000 +
+                    Log.Log.Info("文件" + kv.Value.Excel + "计算用时：" + stopwatch.ElapsedMilliseconds / 1000 +
                         ";\r\nSumSai计算结果为：" + SumSaiSi + ";\r\nSumSi计算结果为：" + SumSi + ";\r\n" +
                         kv.Key + str + kv.Value.GetEGaResult().ToString());
 
@@ -194,12 +194,12 @@ namespace DataHelper.FuncSet.EGIndex
                 //    }
                 //    catch (Exception ex)
                 //    {
-                //        Log.WriteError(ex.ToString());
+                //        Log.Log.Error(ex.ToString());
                 //        //throw ex;
                 //        return null;
                 //    }
                 //    stopwatch.Stop();
-                //    Log.WriteLog("文件" + kv.Value.Excel + "计算用时：" + stopwatch.ElapsedMilliseconds / 1000 +
+                //    Log.Log.Info("文件" + kv.Value.Excel + "计算用时：" + stopwatch.ElapsedMilliseconds / 1000 +
                 //        ";\r\nSumSai计算结果为：" + SumSaiSi + ";\r\nSumSi计算结果为：" + SumSi);
 
                 //    kv.Value.PartEGa = SumSaiSi / (1 - SumSi);
@@ -216,7 +216,7 @@ namespace DataHelper.FuncSet.EGIndex
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 return null;
             }
             

@@ -10,6 +10,8 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ESRI.ArcGIS.Geodatabase;
+using ESRI.ArcGIS.ADF;
 
 namespace DataHelper.FuncSet.Kd.KdEachTable
 {
@@ -24,6 +26,10 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             this.RandomEnterprises = new List<Enterprise>();
             strTrueFileName = GetTrueFileName();
             strSimulateFileName = GetSimulateFileName();
+            densityType = Static.densityType;
+            FileIOInfo fileIo = new FileIOInfo(ExcelFile);
+            this.SingleDogEnterpriseFeatureClassFileName =
+                System.IO.Path.Combine(fileIo.FilePath, fileIo.FileNameWithoutExt, fileIo.FileNameWithoutExt + ".shp");                
         }
 
         /************************************************************************/
@@ -96,6 +102,20 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             this.SingleDogEnterprise = DataProcess.ReadExcel(this.ExcelFile, table, null, FunctionType.KdEachTable);
         }
 
+        public void GetPublicEnterprises()
+        {
+            GetEnterprises();
+        }
+
+        // 计算企业人口占行业总人口比率的平方和 [7/23/2016 15:09:54 mzl]
+        public double CaculateManRatioInEnterprise()
+        {
+            double result = 0.0;
+            double sumOfMan = this.SingleDogEnterprise.Sum(e => e.man);
+            result = this.SingleDogEnterprise.Sum(e => Math.Pow(1.0 * e.man / sumOfMan, 2));
+            return result;
+        }
+
         /// <summary>
         /// 求真实值的中位数
         /// </summary>
@@ -152,6 +172,48 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
                 return;
 
             base.PrintTrueValue(strTrueFileName);
+        }
+
+
+        #endregion
+
+        #region 关于圆心的计算
+        protected virtual CenterEnterprise BaseCaculateCenterEnterprise(List<Enterprise> enterprises, double diameter)
+        {
+            if (enterprises == null || enterprises.Count <= 0 || diameter <= 0.0)
+            {
+                Log.Log.Info("KdEachTable.BaseCaculateCenterEnterprise:企业集合为空或无数据，或传入的直径大小为0");
+                return null;
+            }
+
+            CenterEnterprise enterpriseCircle = new CenterEnterprise();
+            enterpriseCircle.EnterpriseId = enterprises[0].ID;
+            enterpriseCircle.Enterprises = new List<Enterprise>();
+            for (int i = 0; i < enterprises.Count; i++)
+            {
+                Enterprise en = enterprises[i];
+                List<Enterprise> templist = (from e in enterprises.AsParallel()
+                                             let distance = (Math.Sqrt((en.Point.X - e.Point.X) * (en.Point.X - e.Point.X) +
+                                                      (en.Point.Y - e.Point.Y) * (en.Point.Y - e.Point.Y)) / 1000)
+                                             where distance != 0 && distance <= (diameter / 2)
+                                             select e).ToList();
+
+                if (this.densityType == DensityType.Diameter && templist.Count > enterpriseCircle.Enterprises.Count)
+                {
+                    enterpriseCircle.EnterpriseId = en.ID;
+                    enterpriseCircle.Enterprises = templist;
+                    enterpriseCircle.Diameter = diameter;
+                    enterpriseCircle.Excel = ExcelFile;
+                }
+                else if (this.densityType == DensityType.Scale && templist.Sum(x => x.man) > enterpriseCircle.Enterprises.Sum(x => x.man))
+                {
+                    enterpriseCircle.EnterpriseId = en.ID;
+                    enterpriseCircle.Enterprises = templist;
+                    enterpriseCircle.Diameter = diameter;
+                    enterpriseCircle.Excel = ExcelFile;
+                }
+            }
+            return enterpriseCircle;
         }
         #endregion
 
@@ -255,6 +317,45 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             base.PrintSimulateValue(strSimulateFileName);
         }
 
+        public virtual void PrintEnterpises()
+        {
+            if (File.Exists(SingleDogEnterpriseFeatureClassFileName))
+            {
+                if (this.SingleDogEnterpriseFeatureClass == null)
+                {
+                    this.SingleDogEnterpriseFeatureClass = Geodatabase.
+                        GeodatabaseOp.OpenShapefileAsFeatClass(SingleDogEnterpriseFeatureClassFileName);
+                }
+            }   
+            else
+            {
+                IFields fields = GlobalShpInfo.GeneratePointFields();
+                int idxId = fields.FindField("ExcelId"),
+                    idxMan = fields.FindField("Man");
+                this.SingleDogEnterpriseFeatureClass = DataPreProcess.
+                    CreateShpFile(fields, SingleDogEnterpriseFeatureClassFileName);
+                using (ComReleaser comReleaser = new ComReleaser())
+                {
+                    IFeatureBuffer featureBuffer = null;
+
+                    // Create an insert cursor.
+                    IFeatureCursor insertCursor = SingleDogEnterpriseFeatureClass.Insert(true);
+                    comReleaser.ManageLifetime(insertCursor);
+
+                    for (int i = 0; i < this.SingleDogEnterprise.Count; i++)
+                    {
+                        featureBuffer = SingleDogEnterpriseFeatureClass.CreateFeatureBuffer();
+                        comReleaser.ManageLifetime(featureBuffer);
+                        featureBuffer.Value[idxId] = SingleDogEnterprise[i].ID;
+                        featureBuffer.Value[idxMan] = SingleDogEnterprise[i].man;
+                        featureBuffer.Shape = SingleDogEnterprise[i].GeoPoint;
+                        insertCursor.InsertFeature(featureBuffer);
+                    }
+                    insertCursor.Flush();
+                }                 
+            }
+        }
+
         // 对当前的每一个Excel文件进行操作，ExcelFile指当前的Excel的全路径文件名
         public string ExcelFile { get; set; }
         public List<Enterprise> SingleDogEnterprise { get; set; }
@@ -267,5 +368,9 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         protected double TrueStandardDeviation = 0.0;
         // 模拟值两两企业距离的方差 [5/8/2016 21:20:55 mzl]
         protected double RandomStandardDeviation = 0.0;
+        public IFeatureClass SingleDogEnterpriseFeatureClass { get; set; }
+        private string SingleDogEnterpriseFeatureClassFileName { get; set; }
+        // 浓度类型 [5/22/2016 16:58:05 mzl]
+        protected DensityType densityType = DensityType.Diameter;
     }
 }

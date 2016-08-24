@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using ESRI.ArcGIS.Geodatabase;
+using ESRI.ArcGIS.Geometry;
 
 namespace DataHelper.FuncSet.KdBase
 {
@@ -69,7 +70,7 @@ namespace DataHelper.FuncSet.KdBase
             ofd.Filter = "直径 | *.xlsx";
             ofd.Multiselect = false;
             ofd.RestoreDirectory = true;
-            if (ofd.ShowDialog() == DialogResult.OK)            
+            if (ofd.ShowDialog() == DialogResult.OK)
                 filename = ofd.FileName;
 
             MultiDiameters = DataProcess.ReadMultiCircleDiameter(filename, table) as List<MultiCircleDiameters>;
@@ -84,10 +85,33 @@ namespace DataHelper.FuncSet.KdBase
             ofd.Multiselect = false;
             ofd.RestoreDirectory = true;
             if (ofd.ShowDialog() == DialogResult.OK)
+            {
                 filename = ofd.FileName;
-
-            table = DataProcess.ReadEnterpriseDistributedInCountryExcel(filename, table);
+                string destFileName = Static.SelectedPath + "\\" + new FileIOInfo(filename).FileNameWithoutExt + ".xlsx";
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                File.Copy(filename, destFileName);
+                countryExcel = new ExcelAccess(destFileName);
+                table = DataProcess.ReadEnterpriseDistributedInCountryExcel(destFileName, table);
+            }
+            
             return table;
+        }
+
+        public void InitSpatialReference()
+        {
+            ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();
+            string filename = string.Empty;
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "打开坐标系文件";
+            ofd.Filter = "直径 | *.prj";
+            ofd.Multiselect = false;
+            ofd.RestoreDirectory = true;
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                filename = ofd.FileName;
+            }
+            Static.SpatialReference = srf.CreateESRISpatialReferenceFromPRJFile(filename);
         }
 
         public void CaculateKdEachTable()
@@ -103,9 +127,9 @@ namespace DataHelper.FuncSet.KdBase
                     kdET.PrintTrueValue();
                     kdET.CaculateSimulateValue();
                     kdET.PrintSimulateValue();
-                }                
+                }
             });
-        }        
+        }
 
         /************************************************************************/
         /* Description:	这个函数是无数学意义的，应该被删除
@@ -156,7 +180,7 @@ namespace DataHelper.FuncSet.KdBase
         public void CaculateKdEachTableByAllTableMedium()
         {
             int mediumValue = GetKdAllTableMediumValue();
-            Excels.ForEach(e => 
+            Excels.ForEach(e =>
             {
                 KdEachTable kdET = new FuncSet.Kd.KdEachTable.KdEachTable(e);
                 // 若已经计算过这个行业的真实值和模拟值，则跳过这个行业 [5/8/2016 mzl]
@@ -188,7 +212,7 @@ namespace DataHelper.FuncSet.KdBase
                     //kdET.KFunc.Di = mediumValue;
                     kdET.CaculateSimulateValue();
                     kdET.PrintSimulateValue();
-                }                                                
+                }
             });
         }
         #endregion
@@ -228,11 +252,12 @@ namespace DataHelper.FuncSet.KdBase
         public void CaculateKdEachTableMultiCircleCenter()
         {
             //GlobalShpInfo.InitalShpInfo();
+            InitSpatialReference();
             string shpFileName = DataPreProcess.GetShpName("选择中国县界shp");
-            IFeatureClass shpFeatureClass = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(shpFileName);
+            IFeatureClass shpFeatureClass = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(shpFileName);            
             DataTable table = DataPreProcess.GenerateEnterpriseInCountryTable(shpFeatureClass);
             DataTable excelTable = GetEnterpriseInCountry(table);
-           
+
             Excels.ForEach(e =>
             {
                 FileIOInfo fileIo = new FileIOInfo(e);
@@ -244,9 +269,39 @@ namespace DataHelper.FuncSet.KdBase
                     kdetmcc.CaculateCircleEnterprise();
                     kdetmcc.PrintCircleEnterprise();
                     //kdetmcc.FindEnterpriseDistribution();
+                    kdetmcc.FindEnterpriseDistributionInChina();
+                    kdetmcc.PrintEnterpises();
                     kdetmcc.SetEnterpriseNumsInCountry(ref table, shpFeatureClass);
                 }
             });
+            countryExcel.FastExportToExcel(table, 1, 0);
+            countryExcel.Save();
+            countryExcel.Close();     
+        }
+        #endregion
+
+        #region 计算就业人口
+        public void CaculateHIndex()
+        {
+            string shpName = DataPreProcess.GetShpName("选择shp文件");
+            string filename = string.Format("{0}\\{1}.txt", Static.SelectedPath, "H指数");
+            if (System.IO.File.Exists(filename))
+            {
+                File.Delete(filename);
+            }
+            using (FileStream fs = new System.IO.FileStream(filename, FileMode.CreateNew))
+            {
+                StreamWriter sw = new StreamWriter(fs);
+                Excels.ForEach(e =>
+                {
+                    KdEachTable kdET = new FuncSet.Kd.KdEachTable.KdEachTable(e);
+                    kdET.GetPublicEnterprises();
+                    double result = kdET.CaculateManRatioInEnterprise();
+                    System.IO.FileInfo fi = new FileInfo(kdET.ExcelFile);
+                    sw.WriteLine(string.Format("{0}:\t{1}", fi.Name, result));
+                });
+                sw.Close();
+            }
         }
         #endregion
 
@@ -256,5 +311,6 @@ namespace DataHelper.FuncSet.KdBase
         public List<CircleDiameter> CircleDiameters { get; set; }
         // 可能有多个圆的直径 [5/15/2016 16:49:12 mzl]
         public List<MultiCircleDiameters> MultiDiameters { get; set; }
+        ExcelAccess countryExcel { get; set; }
     }
 }

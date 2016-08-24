@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <configSections>
+    <section name="log4net"
+             type="log4net.Config.Log4NetConfigurationSectionHandler, log4net"/>
+  </configSections>
+  <log4net>
+    <appender name="ERROR" type="log4net.Appender.RollingFileAppender">
+      <file value="Log\Error\Log-" />
+      <appendToFile value="true" />
+      <maxSizeRollBackups value="20" />
+      <maximumFileSize value="400KB" />
+      <rollingStyle value="Composite" />
+      <datePattern value="yyyy-MM-dd'.txt'" />
+      <staticLogFileName value="false" />
+      <layout type="log4net.Layout.PatternLayout">
+        <header value="[错误记录--开始]&#13;&#10;"/>
+        <footer value="[错误记录--结束]&#13;&#10;"/>
+        <conversionPattern value="%d [%t] [%thread] %-5level %logger [%ndc] - %message%newline" />
+      </layout>
+    </appender>
+    <appender name="OPERATION" type="log4net.Appender.RollingFileAppender">
+      <file value="Log\Op\Log-" />
+      <appendToFile value="true" />
+      <maxSizeRollBackups value="20" />
+      <maximumFileSize value="400KB" />
+      <rollingStyle value="Composite" />
+      <datePattern value="yyyy-MM-dd'.txt'" />
+      <staticLogFileName value="false" />
+      <layout type="log4net.Layout.PatternLayout">
+        <header value="[操作日志--开始]&#13;&#10;"/>
+        <footer value="[操作日志--结束]&#13;&#10;"/>
+        <conversionPattern value="%d [%t] [%thread] %-5level %logger [%ndc] - %message%newline" />
+      </layout>
+    </appender>
+    <root>
+      <level value="logerror" />
+      <appender-ref ref="ERROR" />
+    </root>
+    <logger name="loginfo">
+      <level value="INFO" />
+      <appender-ref ref="OPERATION" />
+    </logger>
+  </log4net>
+</configuration>

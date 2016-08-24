@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Common;
-using LogHelper;
+// using LogHelper;
 using System.Collections.Concurrent;
 using DataHelper.BaseUtil;
 
@@ -34,7 +34,7 @@ namespace DataHelper.FuncSet.EGIndex
 			try {				
 				SumXa = Enterprises.Sum(e => Math.Pow(e.man / TotalStaff, 2));
 			} catch (Exception ex) {
-				Log.WriteError(ex.ToString());
+				Log.Log.Error(ex.ToString());
 				//throw ex;
 			}
 		}

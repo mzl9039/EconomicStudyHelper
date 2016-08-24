@@ -121,7 +121,7 @@ namespace DataHelper.FuncSet.Kd.KdAllTable
             }
             catch (Exception ex)
             {
-                LogHelper.Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 throw;
             }
         }

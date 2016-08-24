@@ -133,7 +133,7 @@ namespace DataHelper.FuncSet.Kd
             }
             catch (Exception ex)
             {
-                LogHelper.Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 return false;
             }
         }

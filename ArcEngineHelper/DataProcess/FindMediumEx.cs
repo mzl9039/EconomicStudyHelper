@@ -1,6 +1,6 @@
 ﻿using Common;
 using Common.Data;
-using LogHelper;
+// using LogHelper;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -46,7 +46,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
             }
 

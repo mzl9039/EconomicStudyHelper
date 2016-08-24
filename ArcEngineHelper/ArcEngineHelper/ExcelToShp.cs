@@ -8,8 +8,9 @@
  */
 using System;
 using ESRI.ArcGIS.Geometry;
-using LogHelper;
+// using LogHelper;
 using ESRI.ArcGIS.esriSystem;
+using DataHelper.BaseUtil;
 
 namespace DataHelper
 {
@@ -58,7 +59,7 @@ namespace DataHelper
             ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();
             // IProjectedCoordinateSystem pcs = GlobalShpInfo.SpatialReference as IProjectedCoordinateSystem;
             // point.Project(pcs);
-            point.Project(srf.CreateProjectedCoordinateSystem(102012));
+            point.Project(Static.SpatialReference);
             //point.Project(srf.CreateProjectedCoordinateSystem(2431 + (int)((point.X - 100.5) / 3)));
             //point.Project(srf.CreateProjectedCoordinateSystem(21483));
 
@@ -146,7 +147,7 @@ namespace DataHelper
 				IRelationalOperator relationOperator = geo as IRelationalOperator;
 				result = relationOperator.Contains(geoPoint);
 			} catch (Exception ex) {
-				Log.WriteError(ex.ToString());
+				Log.Log.Error(ex.ToString());
 				throw;
 			}
 			return result;

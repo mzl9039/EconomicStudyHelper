@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Common;
-using LogHelper;
+// using LogHelper;
 using DataHelper.BaseUtil;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
@@ -12,6 +12,7 @@ using ESRI.ArcGIS.ADF;
 using System.IO;
 using System.Data;
 using OfficeOpenXml;
+using System.Collections;
 
 namespace DataHelper.FuncSet.Kd.KdEachTable
 {
@@ -29,8 +30,8 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             Diameters = MultiCircleDiameters.Diameters;
             Diameters.RemoveAll(x => x == 0);
             IsMultiCircle = (Diameters.Count(x => x > 0) > 1);
-            ExcelEnterprises = this.SingleDogEnterprise;
-            densityType = Static.densityType;
+            ExcelEnterprises = new List<Enterprise>();
+            
         }
 
         public override void CaculateParams()
@@ -77,6 +78,9 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             {
                 FileIOInfo fileIo = new FileIOInfo(ExcelFile);
                 CircleShpFileName = System.IO.Path.Combine(fileIo.FilePath, fileIo.FileNameWithoutExt, fileIo.FileNameWithoutExt + output);
+                if (File.Exists(CircleShpFileName))
+                    return;
+
                 Static.Fields = GlobalShpInfo.GenerateCircleFields();
                 IFeatureClass shpFeatureClass = DataPreProcess.CreateShpFile(Static.Fields, CircleShpFileName);
                 int idxCircleId = Static.Fields.FindField("CircleId"),
@@ -136,7 +140,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
             }
             catch (System.Exception ex)
             {
-                Log.WriteLog(ex.Message);
+                Log.Log.Info(ex.Message);
             }                            
         }
 
@@ -171,42 +175,9 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         /// <summary>
         /// 查找给定查找范围和给定直径的包含企业数最多的圆
         /// </summary>
-        private CenterEnterprise BaseCaculateCenterEnterprise(List<Enterprise> enterprises, double diameter)
+        protected override CenterEnterprise BaseCaculateCenterEnterprise(List<Enterprise> enterprises, double diameter)
         {
-            if (enterprises == null || enterprises.Count <= 0 || diameter <= 0.0)
-            {
-                Log.WriteLog("KdEachTableMultiCircleCenter.BaseCaculateCenterEnterprise:企业集合为空或无数据，或传入的直径大小为0");
-                return null;
-            }
-
-            CenterEnterprise enterpriseCircle = new CenterEnterprise();
-            enterpriseCircle.EnterpriseId = enterprises[0].ID;
-            enterpriseCircle.Enterprises = new List<Enterprise>();
-            for (int i=0;i< enterprises.Count;i++)
-            {
-                Enterprise en = enterprises[i];
-                List<Enterprise> templist = (from e in enterprises.AsParallel()
-                                             let distance = (Math.Sqrt((en.Point.X - e.Point.X) * (en.Point.X - e.Point.X) +
-                                                      (en.Point.Y - e.Point.Y) * (en.Point.Y - e.Point.Y)) / 1000)
-                                             where distance != 0 && distance <= (diameter / 2)
-                                             select e).ToList();
-
-                if (this.densityType == DensityType.Diameter && templist.Count > enterpriseCircle.Enterprises.Count)
-                {
-                    enterpriseCircle.EnterpriseId = en.ID;
-                    enterpriseCircle.Enterprises = templist;
-                    enterpriseCircle.Diameter = diameter;
-                    enterpriseCircle.Excel = ExcelFile;
-                }
-                else if (this.densityType == DensityType.Scale && templist.Sum(x => x.man) > enterpriseCircle.Enterprises.Sum(x => x.man))
-                {
-                    enterpriseCircle.EnterpriseId = en.ID;
-                    enterpriseCircle.Enterprises = templist;
-                    enterpriseCircle.Diameter = diameter;
-                    enterpriseCircle.Excel = ExcelFile;
-                }
-            }
-            return enterpriseCircle;
+            return base.BaseCaculateCenterEnterprise(enterprises, diameter);
         }
 
         #region 计算多圆，事实是2个圆
@@ -283,43 +254,50 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         }
         #endregion
 
-        public void FindEnterpriseDistribution()
+        public void FindEnterpriseDistributionInCircle()
         {
             // 按半径从大到小排列
             CenterEnterprises.Sort((x, y) => y.Diameter.CompareTo(x.Diameter));
             CenterEnterprise centerEnterprise = CenterEnterprises[0];
-            FindEnterpriseDistributionInBiggestCircle(centerEnterprise);
+            FindEnterpriseDistribution(centerEnterprise.Enterprises, "AllLittleCircles.shp");
+        }       
+       
+        public void FindEnterpriseDistributionInChina()
+        {
+            List<Enterprise> enterprises = new List<Enterprise>();
+            enterprises.AddRange(this.SingleDogEnterprise);
+            FindEnterpriseDistribution(enterprises, "AllLittleCirclesInChina.shp");
         }
 
         /// <summary>
         /// 在最大的圆内，找到小圆的分布情况
         /// </summary>
         /// <param name="centerEnterprise"></param>
-        private void FindEnterpriseDistributionInBiggestCircle(CenterEnterprise centerEnterprise)
+        private void FindEnterpriseDistribution(List<Enterprise> enterprises, string output)
         {
             List<CenterEnterprise> result = new List<CenterEnterprise>();
             switch (densityType)
             {
                 case DensityType.Diameter:
-                    result = NumFindEnterpriseDistributionInBiggestCircle(centerEnterprise);
+                    result = NumFindEnterpriseDistribution(enterprises);
                     break;
                 case DensityType.Scale:
-                    result = ScaleFindEnterpriseDistributionInBiggestCircle(centerEnterprise);
+                    result = ScaleFindEnterpriseDistribution(enterprises);
                     break;
                 default:
                     break;
             }
-            PrintCircleShp(result, "AllLittleCircles.shp");
+            PrintCircleShp(result, output);
         }
 
         /// <summary>
         /// 在最大的圆内，找小圆的信息，这是数量浓度的方法
         /// </summary>
         /// <returns></returns>
-        private List<CenterEnterprise> NumFindEnterpriseDistributionInBiggestCircle(CenterEnterprise centerEns)
+        private List<CenterEnterprise> NumFindEnterpriseDistribution(List<Enterprise> enterprises)
         {
             List<CenterEnterprise> result = new List<CenterEnterprise>();
-            List<Enterprise> Enterprises = centerEns.Enterprises;
+            List<Enterprise> Enterprises = enterprises;
             double totalEnterprises = Enterprises.Count;
             // 当剩余的企业数量不足总数的20%的时候，就停止查找 [6/4/2016 15:30:15 mzl]
             while(Enterprises.Count / totalEnterprises > 0.2)
@@ -343,14 +321,15 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         /// </summary>
         /// <param name="centerEns"></param>
         /// <returns></returns>
-        private List<CenterEnterprise> ScaleFindEnterpriseDistributionInBiggestCircle(CenterEnterprise centerEns)
+        private List<CenterEnterprise> ScaleFindEnterpriseDistribution(List<Enterprise> enterprises)
         {
             List<CenterEnterprise> result = new List<CenterEnterprise>();
-            List<Enterprise> Enterprises = centerEns.Enterprises;
+            List<Enterprise> Enterprises = enterprises;
             double totalScale = Enterprises.Sum(x => x.man);
             while(Enterprises.Sum(x => x.man) / totalScale > 0.2)
             {
-                CenterEnterprise centerEnterprise = BaseScaleFindEnterpriseDistributionInBiggestCircle(Enterprises, centerEns.Diameter);
+                // 规模情况下，也不再扩大半径，而只以20公里直径来求小圆
+                CenterEnterprise centerEnterprise = BaseCaculateCenterEnterprise(Enterprises, 20);
                 if (centerEnterprise != null && centerEnterprise.Enterprises.Count > 0)
                 {
                     result.Add(centerEnterprise);
@@ -358,26 +337,6 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
                 }
                 if (centerEnterprise.Enterprises.Count <= 0)
                     break;
-            }
-            return result;
-        }
-
-        private CenterEnterprise BaseScaleFindEnterpriseDistributionInBiggestCircle(List<Enterprise> Enterprises, double diameter)
-        {
-            CenterEnterprise result = null;
-            double curDiameter = 20;
-            while(curDiameter < diameter)
-            {
-                CenterEnterprise curCenterEnterprise = BaseCaculateCenterEnterprise(Enterprises, curDiameter);
-                if (result == null)                
-                    result = curCenterEnterprise;                
-                else
-                {
-                    if (CaculateDensity(curCenterEnterprise) > CaculateDensity(result))
-                        result = curCenterEnterprise;
-                }                    
-                
-                curDiameter += 5;
             }
             return result;
         }
@@ -390,42 +349,45 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
                 string enterprise = fileIo.FileNameWithoutExt.Substring(0, 4);
                 using (ComReleaser comReleaser = new ComReleaser())
                 {
-                    IFeatureCursor cursor;
-                    IFeature feature;
+                    IFeatureCursor cursor, cursorPoint;
+                    IFeature feature, featurePoint;
                     IQueryFilter filter = new QueryFilterClass();
-                    int idxName = shpFeatureClass.Fields.FindField("NAME");                   
-                    
-                    for (int i = 0; i < this.CenterEnterprises.Count; i++)
+                    int idxName = shpFeatureClass.Fields.FindField("NAME"), idxRow = 0, count = 0;
+                    string name = string.Empty, fileName = new FileIOInfo(this.ExcelFile).FileNameWithoutExt;
+
+                    IEnumerator enumerator = table.Rows.GetEnumerator();
+                    while (enumerator.MoveNext())
                     {
-                        for (int j = 0; j < this.CenterEnterprises[i].Enterprises.Count; i++)
+                        DataRow dr = (DataRow)enumerator.Current;
+                        if (fileName.StartsWith(dr[0].ToString()))
                         {
-                            for (int k=0;k<table.Rows.Count;k++)
-                            {
-                                cursor = Geodatabase.GeodatabaseOp.SpatialRelQurey(shpFeatureClass,
-                                this.CenterEnterprises[i].Enterprises[j].GeoPoint,
-                                esriSpatialRelEnum.esriSpatialRelWithin, string.Format("NAME LIKE '{0}'", table.Rows[k][0].ToString()),
-                                esriSearchOrder.esriSearchOrderAttribute, null, false);
-                                comReleaser.ManageLifetime(cursor);
-                                while ((feature = cursor.NextFeature()) != null)
-                                {
-                                    string name = feature.Fields.Field[idxName].ToString();
-                                    if (table.Rows[k][name] == null || table.Rows[k][name].ToString() == "")
-                                    {
-                                        table.Rows[k][name] = 1;
-                                    }
-                                    else
-                                    {
-                                        table.Rows[k][name] = int.Parse(table.Rows[k][name].ToString()) + 1;
-                                    }
-                                }
-                            }                                                       
+                            idxRow = table.Rows.IndexOf(dr);
+                            break;
                         }
+                    }
+
+                    List<Enterprise> enterprises = new List<Enterprise>();
+                    this.CenterEnterprises.ForEach(c => enterprises.AddRange(c.Enterprises));
+
+                    cursor = shpFeatureClass.Search(null, false);
+                    while ((feature = cursor.NextFeature()) != null)
+                    {
+                        enterprises.ForEach(e => 
+                        {
+                            IRelationalOperator relationOperator = feature.Shape as IRelationalOperator;
+                            if (relationOperator.Contains(e.GeoPoint))
+                                count++;
+                        });
+                        name = feature.Value[idxName].ToString();
+
+                        table.Rows[idxRow][name] = count;
+                        count = 0;
                     }
                 }                                
             }
             catch (System.Exception ex)
             {
-                Log.WriteError("出错文件：" + shpFeatureClass.AliasName + " " + ex.Message);
+                Log.Log.Error("出错文件：" + shpFeatureClass.AliasName + " " + ex.Message);
                 throw;
             }            
         }
@@ -524,9 +486,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         // 行业内的圆及圆内企业 [5/16/2016 7:32:29 mzl]
         private List<CenterEnterprise> CenterEnterprises = new List<CenterEnterprise>();
         // 当前excel对应行业的直径以及浓度信息 [5/15/2016 16:54:56 mzl]
-        MultiCircleDiameters MultiCircleDiameters = null;
-        // 浓度类型 [5/22/2016 16:58:05 mzl]
-        private DensityType densityType = DensityType.Diameter;
+        MultiCircleDiameters MultiCircleDiameters = null;        
         // 行业内圆shp的文件名 [5/22/2016 16:58:59 mzl]
         private string CircleShpFileName = string.Empty;
         // 圆心之间两两距离的txt [6/4/2016 14:40:35 mzl]

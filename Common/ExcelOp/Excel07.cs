@@ -5,7 +5,6 @@ using OfficeOpenXml;
 using OfficeOpenXml.FormulaParsing;
 using System.IO;
 using System.Data;
-using LogHelper;
 
 namespace Common
 {
@@ -70,7 +69,7 @@ namespace Common
                                  }
                                  catch (Exception ex)
                                  {
-                                     Log.WriteError("sheet.Cells[rowNum, colNum].Value:" + sheet.Cells[rowNum, colNum].Value.ToString().Trim() + "\r\n" + ex.Message);
+                                     Log.Log.Error(ex);
                                      continue;
                                  }
 
@@ -86,7 +85,7 @@ namespace Common
              }
              catch (Exception ex)
              {
-                 Log.WriteError(ex.ToString());
+                 Log.Log.Error(ex.ToString());
                  //throw ex;
                  return null;
              }

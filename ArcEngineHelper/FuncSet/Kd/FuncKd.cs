@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Common;
-using LogHelper;
+// using LogHelper;
 using DataHelper.BaseUtil;
 
 namespace DataHelper.FuncSet.Kd
@@ -51,7 +51,7 @@ namespace DataHelper.FuncSet.Kd
             {
                 foreach (var ex in aex.Flatten().InnerExceptions)
                 {
-                    Log.WriteError(ex.ToString());
+                    Log.Log.Error(ex.ToString());
                 }
                 return null;
             }
@@ -109,7 +109,7 @@ namespace DataHelper.FuncSet.Kd
             {
                 foreach (var ex in aex.Flatten().InnerExceptions)
                 {
-                    Log.WriteError(ex.ToString());
+                    Log.Log.Error(ex.ToString());
                 }
                 return null;
             }

@@ -7,7 +7,7 @@ using ESRI.ArcGIS.Geometry;
 using System.IO;
 using ESRI.ArcGIS.DataSourcesFile;
 using System.Data;
-using LogHelper;
+// using LogHelper;
 using System.Windows.Forms;
 using ESRI.ArcGIS.ADF;
 
@@ -60,7 +60,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError("DataPreProcess.CreateShpFile:" + ex.Message);
+                Log.Log.Error("DataPreProcess.CreateShpFile:" + ex.Message);
                 //throw ex;
                 return null;
             }
@@ -83,7 +83,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
             }
             return result;
@@ -230,7 +230,7 @@ namespace DataHelper
             }
             catch (System.Exception ex)
             {
-                Log.WriteError(ex.Message);
+                Log.Log.Error(ex.Message);
                 throw ex;
             }            
 

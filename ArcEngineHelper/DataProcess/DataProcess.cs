@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using Common;
-using LogHelper;
+// using LogHelper;
 using ESRI.ArcGIS.Geometry;
 using System.Collections.Concurrent;
 using DataHelper.BaseUtil;
@@ -45,7 +45,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.WriteError("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
                     return null;
                 }
 
@@ -84,17 +84,17 @@ namespace DataHelper
 
                     string id = fileIO.FileNameWithoutExt + "." + dr["ID"].ToString();
 
-                    Enterprise e = new Enterprise(id, newpoint, man + woman, new Common.Point(lng, lat, zone));
+                    Enterprise e = new Enterprise(id, point, man + woman, new Common.Point(lng, lat, zone));
                     enterprises.Add(e);
                 }
                 table.Clear(); table = null;
                 stopwatch.Stop();
-                Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+                Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
                 return enterprises;
             }
             catch (Exception ex)
             {
-                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
                 return null;
             }
         }
@@ -113,7 +113,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.WriteError("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
                     return null;
                 }
 
@@ -123,12 +123,12 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
                 throw;
             }
 
             stopwatch.Stop();
-            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
             return max;
         }
 
@@ -146,7 +146,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.WriteError("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
                     return null;
                 }
                 result = table.AsEnumerable().AsParallel().Select(r => new CircleDiameter(r.Field<string>("en"), r.Field<double>("dm"))).ToList();
@@ -154,11 +154,11 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
                 throw;
             }
             stopwatch.Stop();
-            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
 
             result.Sort((x, y) => int.Parse(x.EnterpriseCode).CompareTo(int.Parse(y.EnterpriseCode)));
             return result;
@@ -178,7 +178,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.WriteError("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
                     return null;
                 }
                 result = table.AsEnumerable().AsParallel()
@@ -194,11 +194,11 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
                 throw;
             }
             stopwatch.Stop();
-            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
 
             result.Sort((x, y) => int.Parse(x.EnterpriseCode).CompareTo(int.Parse(y.EnterpriseCode)));
             return result;
@@ -218,12 +218,12 @@ namespace DataHelper
             }
             catch (System.Exception ex)
             {
-                Log.WriteError("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
                 throw;
             }
 
             stopwatch.Stop();
-            Log.WriteLog("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
             return table;
         }
 

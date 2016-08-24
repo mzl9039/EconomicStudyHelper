@@ -25,7 +25,7 @@ namespace Common
 			return excelReader;
 		}
 	}
-	
+
 	public enum DefaltExcel {
 		DefaltSheet = 1
 	}

@@ -10,7 +10,7 @@ using System;
 using System.Windows.Forms;
 using ESRI.ArcGIS.esriSystem;
 using DataHelper;
-using LogHelper;
+// using LogHelper;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
@@ -46,7 +46,7 @@ namespace EconomicStudyHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 //throw ex;
             }
             finally

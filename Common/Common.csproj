@@ -48,6 +48,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -67,18 +68,19 @@
     <Compile Include="Data\TwoPointsDistance.cs" />
     <Compile Include="ExcelOp\Excel03.cs" />
     <Compile Include="ExcelOp\Excel07.cs" />
+    <Compile Include="ExcelOp\ExcelAccess.cs" />
     <Compile Include="ExcelOp\ExcelOp.cs" />
     <Compile Include="ExcelOp\IExcelOp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LogHelper\LogHelper.csproj">
-      <Project>{3805BD6A-F266-4D53-A194-054854020C21}</Project>
-      <Name>LogHelper</Name>
-    </ProjectReference>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <ProjectReference Include="..\Log\Log.csproj">
+      <Project>{2b85b24b-ea17-4261-ad20-26ae6b58b13f}</Project>
+      <Name>Log</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

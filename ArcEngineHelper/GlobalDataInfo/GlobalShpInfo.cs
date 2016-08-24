@@ -10,7 +10,7 @@ using System;
 using ESRI.ArcGIS.Geometry;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.DataSourcesFile;
-using LogHelper;
+// using LogHelper;
 using DataHelper.BaseUtil;
 
 namespace DataHelper
@@ -41,7 +41,7 @@ namespace DataHelper
             string shpName = DataPreProcess.GetShpName(title);
             if (shpName == null)
             {
-                Log.WriteLog("获取的shp文件名为空");
+                Log.Log.Info("获取的shp文件名为空");
                 return null;
             }
 
@@ -61,7 +61,7 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
                 throw;
             }
             return spatialReference;

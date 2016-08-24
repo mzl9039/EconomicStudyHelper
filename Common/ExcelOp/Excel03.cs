@@ -5,7 +5,6 @@ using System.IO;
 using NPOI.SS.UserModel;
 using NPOI.HSSF.UserModel;
 using System.Data;
-using LogHelper;
 
 namespace Common
 {
@@ -72,7 +71,7 @@ namespace Common
                             }
                             catch (Exception ex)
                             {
-                                Log.WriteError("row.GetCell():" + row.GetCell(j).ToString() + "\r\n" + ex.Message);
+                                Log.Log.Error("row.GetCell():" + row.GetCell(j).ToString() + "\r\n" + ex.Message);
                                 continue;
                             }                            
                         }

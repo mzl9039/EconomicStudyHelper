@@ -72,9 +72,9 @@
       <Project>{F85F42F5-A723-44AC-8DC4-E6BD7B1D8930}</Project>
       <Name>DataHelper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\LogHelper\LogHelper.csproj">
-      <Project>{3805BD6A-F266-4D53-A194-054854020C21}</Project>
-      <Name>LogHelper</Name>
+    <ProjectReference Include="..\Log\Log.csproj">
+      <Project>{2b85b24b-ea17-4261-ad20-26ae6b58b13f}</Project>
+      <Name>Log</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

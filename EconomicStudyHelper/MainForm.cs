@@ -13,7 +13,7 @@ using System.Windows.Forms;
 using System.Data;
 using System.IO;
 using System.Linq;
-using LogHelper;
+// using LogHelper;
 using DataHelper;
 using DataHelper.FuncSet.EGIndex;
 using DataHelper.FuncSet.EGIndex.RobustCheck;
@@ -21,6 +21,7 @@ using DataHelper.FuncSet.Kd.KdEachTable;
 using DataHelper.FuncSet.KdBase;
 using System.Collections.Concurrent;
 using DataHelper.BaseUtil;
+using ESRI.ArcGIS.Geometry;
 
 namespace EconomicStudyHelper
 {
@@ -56,14 +57,14 @@ namespace EconomicStudyHelper
             }
             catch (Exception ex)
             {
-                Log.WriteError(ex.ToString());
+                Log.Log.Error(ex.ToString());
             }
             KdBase kdBase;
 
             switch (cbxFuncType.Text)
 		    {
                 case "K(d)":
-                    Log.WriteLog("K(d)方法对所有表的所有企业计算真实值和模拟值，无意义，被废除该方法");
+                    Log.Log.Info("K(d)方法对所有表的所有企业计算真实值和模拟值，无意义，被废除该方法");
                     //kdBase = new KdBase(excels.ToList());
                     //kdBase.CaculateKdAllTable();
                     break;
@@ -101,6 +102,10 @@ namespace EconomicStudyHelper
                     kdBase.GetMultiCircleDiameters();
                     kdBase.CaculateKdEachTableMultiCircleCenter();
                     break;
+                case "H指数":
+                    kdBase = new KdBase(excels.ToList());
+                    kdBase.CaculateHIndex();
+                    break; 
                 default:
                     break;
 		    }
@@ -117,11 +122,13 @@ namespace EconomicStudyHelper
             this.cb_densityType.Items.AddRange(densityType);
 	    }
 
+
+
         // 各种方法集合 [3/14/2016 mzl]
         // K(d)刘晔是指K(d)EachTable方法，其中每个excel里的中位数由全部excel的中位数确定 [3/14/2016 mzl]
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
         //  [5/15/2016 16:22:36 mzl]
-        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆" };
+        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数" };
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
         private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
 

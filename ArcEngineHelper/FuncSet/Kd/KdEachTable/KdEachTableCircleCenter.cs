@@ -1,6 +1,6 @@
 ﻿using DataHelper.BaseUtil;
 using ESRI.ArcGIS.Geodatabase;
-using LogHelper;
+// using LogHelper;
 using MapEdit;
 using System;
 using System.Collections.Generic;
