@@ -133,6 +133,7 @@ namespace EconomicStudyHelper
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
         //  [5/15/2016 16:22:36 mzl]
         private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数", "分区域H指数" };
+
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
         private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
 
@@ -169,7 +170,7 @@ namespace EconomicStudyHelper
 
         private void cbxFuncType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (cbxFuncType.SelectedText)
+            switch (cbxFuncType.Text)
             {
                 case "K(d)":
                     Static.funcType = FunctionType.Kd;

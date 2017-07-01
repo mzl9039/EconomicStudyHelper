@@ -59,8 +59,8 @@ namespace DataHelper
             ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();
             // IProjectedCoordinateSystem pcs = GlobalShpInfo.SpatialReference as IProjectedCoordinateSystem;
             // point.Project(pcs);
-            point.Project(Static.SpatialReference);
-            //point.Project(srf.CreateProjectedCoordinateSystem(2431 + (int)((point.X - 100.5) / 3)));
+            //point.Project(Static.SpatialReference);
+            point.Project(srf.CreateProjectedCoordinateSystem(2431 + (int)((point.X - 100.5) / 3)));
             //point.Project(srf.CreateProjectedCoordinateSystem(21483));
 
             return point;

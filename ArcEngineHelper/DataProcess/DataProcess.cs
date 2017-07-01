@@ -83,8 +83,9 @@ namespace DataHelper
                         continue;
 
                     string id = fileIO.FileNameWithoutExt + "." + dr["ID"].ToString();
-
-                    Enterprise e = new Enterprise(id, point, man + woman, new Common.Point(lng, lat, zone));
+                    // 由于3131内存不足，new Enterprise时取消第4个变量，这个变量在代码中似乎从来没用到过 [1/22/2017 20:14:07 mzl]           
+                    //Enterprise e = new Enterprise(id, point, man + woman, new Common.Point(lng, lat, zone));
+                    Enterprise e = new Enterprise(id, point, man + woman);
                     enterprises.Add(e);
                 }
                 table.Clear(); table = null;

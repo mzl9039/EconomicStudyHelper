@@ -19,7 +19,7 @@ namespace DataHelper.FuncSet.Kd
             ConcurrentDictionary<int, double> results = new ConcurrentDictionary<int, double>();
             try
             {
-                double factor = 1 / ((kfunc.n - 1) * kfunc.n * kfunc.h * Math.Sqrt(2 * Math.PI));
+                double factor = 1 / (1.0 * (kfunc.n - 1) * kfunc.n * kfunc.h * Math.Sqrt(2 * Math.PI));
                 int EnterprisesCount = Enterprises.Count;
 
                 Parallel.For(0, (int)(kfunc.Di + 1), (d, state) => 

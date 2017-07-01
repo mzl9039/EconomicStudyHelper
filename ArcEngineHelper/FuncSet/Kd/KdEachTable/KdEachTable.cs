@@ -245,6 +245,10 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         #region 模拟值计算相关
         protected override void GetSimulateValue()
         {
+            // 为了节省内存，这里把真实值清空掉 [1/23/2017 14:01:24 mzl]
+            this.SingleDogEnterprise.Clear();
+            this.SingleDogEnterprise = null;
+
             for (int i = 0; i < Kd_Mdl.SimulateTimes; i++)
             {
                 CaculateRandomParams();
