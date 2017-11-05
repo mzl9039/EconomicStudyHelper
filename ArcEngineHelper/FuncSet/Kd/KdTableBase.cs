@@ -32,7 +32,7 @@ namespace DataHelper.FuncSet.Kd
             if (Static.Enterprises == null)
             {
                 DataTable table = Static.Table;
-                Static.Enterprises = DataProcess.ReadExcels(this.Excels, table, null, FunctionType.Kd);
+                Static.Enterprises = DataProcess.ReadExcels(this.Excels, table, true, null, FunctionType.Kd);
             }
             this.Enterprises = Static.Enterprises;
         }

@@ -22,6 +22,8 @@ using DataHelper.FuncSet.KdBase;
 using System.Collections.Concurrent;
 using DataHelper.BaseUtil;
 using ESRI.ArcGIS.Geometry;
+using DataHelper.FuncSet.EnterpriseInCircleBufferStatics;
+using DataHelper.FuncSet.Convert;
 
 namespace EconomicStudyHelper
 {
@@ -33,23 +35,34 @@ namespace EconomicStudyHelper
 		public MainForm()
 		{
             InitializeComponent();
+            // 初始化表格的基本格式 [9/17/2017 16:54:28 mzl]
 			GlobalDataInfo.InitalGlobalDataInfo();			
 
             InitCbxFuncType();
 		    cbxFuncType.SelectedItem = funcType[funcType.Length - 1];
-            cbxKdFuncType.SelectedItem = kdFuncType[0];
-            cb_densityType.SelectedItem = densityType[0];
+            cbxKdFuncType.SelectedItem = kdFuncType[kdFuncType.Length - 1];
+            cb_densityType.SelectedItem = densityType[densityType.Length - 1];
 		}
 		
 		void Btn_StartClick(object sender, EventArgs e)
 		{
 		    string[] excels = null;
-			FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            string defaultPath = "";
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            if (defaultPath != "")
+            {
+                //设置此次默认目录为上一次选中目录  
+                folderBrowserDialog.SelectedPath = defaultPath;
+            }
 
             try
             {
-                if (folderBrowserDialog.ShowDialog() == DialogResult.OK)                
-                    excels = Directory.GetFiles(folderBrowserDialog.SelectedPath, "*gps.xlsx");                
+                if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+                {
+                    //记录选中的目录  
+                    defaultPath = folderBrowserDialog.SelectedPath;
+                    excels = Directory.GetFiles(folderBrowserDialog.SelectedPath, "*gps.xlsx");
+                }
                 else
                     return;
 
@@ -60,6 +73,9 @@ namespace EconomicStudyHelper
                 Log.Log.Error(ex.ToString());
             }
             KdBase kdBase;
+            GeneralStatics gs;
+            IConvert convert;
+            LatiAndLongi2CountyName lal2cn;
 
             switch (cbxFuncType.Text)
 		    {
@@ -110,6 +126,18 @@ namespace EconomicStudyHelper
                     kdBase = new KdBase(excels.ToList());
                     kdBase.CaculateHIndexByArea();
                     break;
+                case "搜索圆内企业":
+                    gs = new GeneralStatics(excels.ToList());
+                    gs.CircleBufferStatics();
+                    break;
+                case "经纬度转换为县名":
+                    convert = new LatiAndLongi2CountyName(excels.ToList());
+                    convert.convert();
+                    break;
+                case "企业点存为csv":
+                    lal2cn = new LatiAndLongi2CountyName(excels.ToList());
+                    lal2cn.excelSaveAsCsv();
+                    break;
                 default:
                     break;
 		    }
@@ -132,15 +160,17 @@ namespace EconomicStudyHelper
         // K(d)刘晔是指K(d)EachTable方法，其中每个excel里的中位数由全部excel的中位数确定 [3/14/2016 mzl]
         // K(d)圆心指K(d)EachTable方法，其中每个excel [3/14/2016 mzl]
         //  [5/15/2016 16:22:36 mzl]
-        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值", "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数", "分区域H指数" };
+        private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值",
+            "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数", "分区域H指数", "搜索圆内企业",
+            "经纬度转换为县名", "企业点存为csv"};
 
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
-        private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法" };
+        private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法", "无" };
 
-        private string[] densityType = new string[] { "半径浓度", "人口浓度" };
+        private string[] densityType = new string[] { "半径浓度", "人口浓度", "无" };
         private void cbxKdFuncType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (cbxKdFuncType.SelectedText)
+            switch (cbxKdFuncType.Text)
             {
                 case "原有Kd方法":
                     Static.kdType = KdType.KdClassic;

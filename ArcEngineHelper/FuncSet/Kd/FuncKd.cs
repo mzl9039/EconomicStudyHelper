@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using Common;
 // using LogHelper;
 using DataHelper.BaseUtil;
+using System.Diagnostics;
 
 namespace DataHelper.FuncSet.Kd
 {
@@ -69,14 +70,17 @@ namespace DataHelper.FuncSet.Kd
             {
                 // 计算行业内，两两企业人数乘积的总和 [5/8/2016 mzl]
                 double scale = 0.0;
-                for (int i=0; i<Enterprises.Count;i++)
+                double factor = 0.0;
+
+                for (int i = 0; i < Enterprises.Count; i++)
                 {
-                    for (int j=i+1;j<Enterprises.Count;j++)
+                    for (int j = i + 1; j < Enterprises.Count; j++)
                     {
-                        scale += Enterprises[i].man * Enterprises[j].man;
+                        // 添加类型转换，否则会超出int计算范围，造成算术溢出 [17/9/2017 mzl]
+                        scale += ((double)Enterprises[i].man) * (Enterprises[j].man);
                     }
                 }
-                double factor = 1 / (kfunc.h * Math.Sqrt(2 * Math.PI) * scale);
+                factor = 1 / (kfunc.h * Math.Sqrt(2 * Math.PI) * scale);
 
                 int EnterprisesCount = Enterprises.Count;
                 Parallel.For(0, (int)(kfunc.Di + 1), (d, state) =>
@@ -97,7 +101,7 @@ namespace DataHelper.FuncSet.Kd
                             {
                                 double temp = (d - distance) / kfunc.h;
                                 // 距离计算后乘以两个企业的人数 [5/8/2016 mzl]
-                                result += Math.Pow(Math.E, -0.5 * temp * temp) * Enterprises[i].man * Enterprises[j].man;
+                                result += Math.Pow(Math.E, -0.5 * temp * temp) * eOut.man * eIn.man;
                             }
                         }
                     }
@@ -141,8 +145,9 @@ namespace DataHelper.FuncSet.Kd
             //// 原来的 h 少乘一个R [5/8/2016 mzl]      
             switch (Static.kdType)
             {
+                // 原有的kd方法也采用 1.06 * sd，理合理 [17/9/2017 13:07:24 mzl]
                 case KdType.KdClassic:
-                    this.h = 0.79 * r * Math.Pow(n, -0.2);
+                    this.h = 1.06 * sd * Math.Pow(n, -0.2);
                     break;
                 case KdType.KdScale:
                     this.h = 1.06 * sd * Math.Pow(n, -0.2);

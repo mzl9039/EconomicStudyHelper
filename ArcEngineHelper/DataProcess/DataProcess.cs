@@ -32,7 +32,7 @@ namespace DataHelper
         /// <param name="pointCheckGeo">数据点所在的范围，若在此范围内则记录，否则跳过</param>
         /// <param name="ft">方法类型，不同方法对点的坐标转换不同</param>
         /// <returns></returns>
-        public static List<Enterprise> ReadExcel(string filename, DataTable t, IGeometry pointCheckGeo = null, FunctionType ft = FunctionType.Default)
+        public static List<Enterprise> ReadExcel(string filename, DataTable t, bool convert = true, IGeometry pointCheckGeo = null, FunctionType ft = FunctionType.Default)
         {
             List<Enterprise> enterprises = new List<Enterprise>();
             FileIOInfo fileIO = new FileIOInfo(filename);
@@ -45,7 +45,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error(string.Format("读取 Excel 文件：{0}失败！", filename));
                     return null;
                 }
 
@@ -60,8 +60,8 @@ namespace DataHelper
                         continue;
 
                     // 如果本行男女总人数为0，认为本行数据为符合要求，删除本行
-                    int man = int.Parse(dr["Man"].ToString());
-                    int woman = int.Parse(dr["Woman"].ToString());
+                    int man = Convert.ToInt32(double.Parse(dr["Man"].ToString()));
+                    int woman = Convert.ToInt32(double.Parse(dr["Woman"].ToString()));
                     if (0 == (man + woman))
                         continue;
 
@@ -70,7 +70,16 @@ namespace DataHelper
 
                     int zone = 0;
                     // 方法一、原来的代码 [6/5/2016 0:57:15 mzl]
-                    IPoint point = ExcelToShp.CastPointByFunctionType(lng, lat, ft);
+                    // 若 convert 为false，则保留原来的经纬度；否则转为平面坐标 [10/15/2017 14:16:32 mzl]
+                    IPoint point = new PointClass();
+                    if (convert)
+                    {
+                        point = ExcelToShp.CastPointByFunctionType(lng, lat, ft);
+                    }
+                    else
+                    {
+                        point.PutCoords(lng, lat);
+                    }
                     // 方法二、利用WKSPoint [6/5/2016 0:58:11 mzl]
                     //IPoint point = ExcelToShp.GCS2PRJ(lng, lat);
                     // 方法三、网上抄的代码 [6/5/2016 0:58:34 mzl]
@@ -90,12 +99,12 @@ namespace DataHelper
                 }
                 table.Clear(); table = null;
                 stopwatch.Stop();
-                Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+                Log.Log.Info(string.Format("读取excel文件{0}的时间为：{1}", fileIO.FileName, stopwatch.ElapsedTicks / Stopwatch.Frequency));
                 return enterprises;
             }
             catch (Exception ex)
             {
-                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error(string.Format("读取文件{0}异常。\r\n异常为:{1}", filename, ex.Message));
                 return null;
             }
         }
@@ -114,7 +123,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error(string.Format("读取 Excel 文件：{0}失败！", filename));
                     return null;
                 }
 
@@ -124,12 +133,12 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
-                throw;
+                Log.Log.Error(string.Format("读取文件{0}异常。\r\n异常为:{1}", filename, ex.Message));
+                throw ex;
             }
 
             stopwatch.Stop();
-            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info(string.Format("读取excel文件{0}用时为：{1}", fileIO.FileName, stopwatch.ElapsedTicks / Stopwatch.Frequency));
             return max;
         }
 
@@ -147,7 +156,7 @@ namespace DataHelper
                 DataTable table = excelReader.ReadExcel(filename, (int)DefaltExcel.DefaltSheet);
                 if (table == null)
                 {
-                    Log.Log.Error("读取 Excel 文件：" + filename + "失败！");
+                    Log.Log.Error(string.Format("读取 Excel 文件：{0}失败！", filename));
                     return null;
                 }
                 result = table.AsEnumerable().AsParallel().Select(r => new CircleDiameter(r.Field<string>("en"), r.Field<double>("dm"))).ToList();
@@ -155,11 +164,11 @@ namespace DataHelper
             }
             catch (Exception ex)
             {
-                Log.Log.Error("出错文件：" + filename + " " + ex.Message);
+                Log.Log.Error(string.Format("读取文件{0}异常。\r\n异常为:{1}", filename, ex.Message));
                 throw;
             }
             stopwatch.Stop();
-            Log.Log.Info("文件" + fileIO.FileName + "读取excel值的时间为" + stopwatch.ElapsedTicks / Stopwatch.Frequency);
+            Log.Log.Info(string.Format("读取excel文件{0}用时为：{1}", fileIO.FileName, stopwatch.ElapsedTicks / Stopwatch.Frequency));
 
             result.Sort((x, y) => int.Parse(x.EnterpriseCode).CompareTo(int.Parse(y.EnterpriseCode)));
             return result;
@@ -235,12 +244,12 @@ namespace DataHelper
         /// <param name="pointCheckGeo">数据点所在的范围，若在此范围内则记录，否则跳过</param>
         /// <param name="ft">方法类型，不同方法对点的坐标转换不同</param>
         /// <returns></returns>
-        public static List<Enterprise> ReadExcels(List<string> excels, DataTable table, IGeometry pointCheckGeo = null, FunctionType ft = FunctionType.Default)
+        public static List<Enterprise> ReadExcels(List<string> excels, DataTable table, bool convert, IGeometry pointCheckGeo = null, FunctionType ft = FunctionType.Default)
         {
             List<Enterprise> enterprises = new List<Enterprise>();
             excels.ForEach(e =>
             {
-                enterprises.AddRange(ReadExcel(e, Static.Table, pointCheckGeo, ft));
+                enterprises.AddRange(ReadExcel(e, Static.Table, convert, pointCheckGeo, ft));
             });
             return enterprises;
         }

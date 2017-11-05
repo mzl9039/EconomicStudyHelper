@@ -24,7 +24,7 @@ namespace DataHelper.FuncSet.EGIndex
 		public EGEnterpriseData(string excel)
 		{
 			Excel = excel;
-            List<Enterprise> enterprises = DataProcess.ReadExcel(Excel,Static.Table, null, FunctionType.EGIndex);
+            List<Enterprise> enterprises = DataProcess.ReadExcel(Excel,Static.Table, true ,null, FunctionType.EGIndex);
             enterprises.AsParallel().ForAll(e => this.Enterprises.Add(e));
 			TotalStaff = Enterprises.Sum(e => e.man);
 			CaculateXa();

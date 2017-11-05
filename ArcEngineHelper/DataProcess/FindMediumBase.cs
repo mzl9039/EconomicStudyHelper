@@ -198,7 +198,8 @@ namespace DataHelper
         public double CaculateStandardDeviation()
         {
             double averageDistance = CaculateAverageDistances(this.Enterprises);
-            return CaculateStandardDeviation(this.Enterprises, averageDistance);
+            double standardDeviation = CaculateStandardDeviation(this.Enterprises, averageDistance);
+            return standardDeviation;
         }
 
         /// <summary>
@@ -208,13 +209,15 @@ namespace DataHelper
         /// <returns></returns>
         protected double CaculateAverageDistances(List<Enterprise> enterprises)
         {
-            double averageDistance = 0.0;
-            int distanceCount = 0;
+            ConcurrentDictionary<int, double> averageDistanceConDict = new ConcurrentDictionary<int, double>();
+            ConcurrentDictionary<int, int> distanceCountConDict = new ConcurrentDictionary<int, int>();
             try
             {
                 Parallel.For(0, enterprises.Count, (i, loopStateOut) =>
                 {
                     Enterprise eOut = enterprises[i];
+                    averageDistanceConDict.TryAdd(i, 0.0);
+                    distanceCountConDict.TryAdd(i, 0);
 
                     for (int j = i + 1; j < enterprises.Count; j++)
                     {
@@ -226,8 +229,8 @@ namespace DataHelper
                             continue;
                         else
                         {
-                            distanceCount++;
-                            averageDistance += distance;
+                            distanceCountConDict[i] += + 1;
+                            averageDistanceConDict[i] += distance;
                         }
                     }
                 });
@@ -239,7 +242,7 @@ namespace DataHelper
                     Log.Log.Error(aex.Flatten().InnerExceptions[i].InnerException.ToString());
                 }
             }
-            return averageDistance / distanceCount;
+            return averageDistanceConDict.Values.Sum() / distanceCountConDict.Values.Sum();
         }
 
         /// <summary>
@@ -251,12 +254,15 @@ namespace DataHelper
         protected double CaculateStandardDeviation(List<Enterprise> enterprises, double averageDistance)
         {
             double standardDeviation = 0.0;
-            int distanceCount = 0;
+            ConcurrentDictionary<int, double> standardDeviationConDict = new ConcurrentDictionary<int, double>();
+            ConcurrentDictionary<int, int> distanceCountConDict = new ConcurrentDictionary<int, int>();
             try
             {
                 Parallel.For(0, enterprises.Count, (i, loopStateOut) =>
                 {
                     Enterprise eOut = enterprises[i];
+                    standardDeviationConDict.TryAdd(i, 0.0);
+                    distanceCountConDict.TryAdd(i, 0);
 
                     for (int j = i + 1; j < enterprises.Count; j++)
                     {
@@ -268,12 +274,12 @@ namespace DataHelper
                             continue;
                         else
                         {
-                            distanceCount++;
-                            standardDeviation += (distance - averageDistance) * (distance - averageDistance);
+                            standardDeviationConDict[i] += (distance - averageDistance) * (distance - averageDistance);
+                            distanceCountConDict[i] += 1;
                         }
                     }
                 });
-                standardDeviation = Math.Sqrt(standardDeviation / distanceCount);
+                standardDeviation = Math.Sqrt(standardDeviationConDict.Values.Sum() / distanceCountConDict.Values.Sum());
             }
             catch (AggregateException aex)
             {

@@ -100,7 +100,7 @@ namespace DataHelper.FuncSet.Kd.KdEachTable
         protected override void GetEnterprises()
         {
             DataTable table = Static.Table;
-            this.SingleDogEnterprise = DataProcess.ReadExcel(this.ExcelFile, table, null, FunctionType.KdEachTable);
+            this.SingleDogEnterprise = DataProcess.ReadExcel(this.ExcelFile, table, true, null, FunctionType.KdEachTable);
         }
 
         public void GetPublicEnterprises()

@@ -42,26 +42,57 @@ namespace DataHelper.FuncSet.EGIndex
 			if (shpName == null)
 				return;
 			
-			ShpName = shpName;
-			FeatureClassCounty = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(ShpName);	
+			//ShpName = shpName;
+			FeatureClassCounty = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(EnterpriseShpName);	
 			
-            // 生成 shp 速度太慢，不再生成 shp
             FieldsPt = GeneratePointFields();
-            //string dir = System.Windows.Forms.Application.StartupPath;
+            string dir = System.Windows.Forms.Application.StartupPath;
 
-            //if (!Directory.Exists(dir + "\\EGIndex"))
-            //    Directory.CreateDirectory(dir + "\\EGIndex");
+            if (!Directory.Exists(dir + "\\EGIndex"))
+                Directory.CreateDirectory(dir + "\\EGIndex");
 
-            //ShpName = dir + "\\EGIndex\\" + dataName;
-            //// 如果 shp 文件不存在，则创建 shp， 否则直接打开 shp
-            //if (FeatureClassPt == null || WorkspacePt == null)
-            //{
-            //    FeatureClassPt = DataPreProcess.CreateShpFile(FieldsPt, ShpName);
-            //    WorkspacePt = Geodatabase.GeodatabaseOp.Open_shapefile_Workspace(ShpName);
-            //}
-
-            //EGIndexBaseUtil.ExcelData2Shp(WorkspacePt, FeatureClassPt, enterprises);	
-		}
+            EnterpriseShpName = dir + "\\EGIndex\\" + dataName;
+            // 如果 shp 文件不存在，则创建 shp， 否则打开shp，因为shp已经创建成功了，
+            // 这里默认第一次创建shp就是成功的，否则需要手动删除再创建 [10/15/2017 11:08:14 mzl]              
+            if (!File.Exists(EnterpriseShpName))
+            {
+                // IO 操作需要加 try catch [10/15/2017 11:09:23 mzl]
+                try
+                {
+                    FeatureClassPt = DataPreProcess.CreateShpFile(FieldsPt, EnterpriseShpName);
+                    WorkspacePt = Geodatabase.GeodatabaseOp.Open_shapefile_Workspace(EnterpriseShpName);
+                    // 这里需要较长的时间 [10/15/2017 11:12:34 mzl]
+                    EGIndexBaseUtil.ExcelData2Shp(WorkspacePt, FeatureClassPt, enterprises);
+                }
+                catch (System.Exception ex)
+                {
+                    try
+                    {
+                        // 创建shp失败，把刚刚创建的shp给删除掉 [10/15/2017 11:11:12 mzl]
+                        Directory.Delete(dir + "\\EGIndex\\", true);
+                    }
+                    catch (System.Exception ex2)
+                    {
+                        Log.Log.Error(ex2);
+                        throw ex2;
+                    }
+                    Log.Log.Error(ex);
+                    throw ex;
+                }
+            }
+            else
+            {
+                try
+                {
+                    FeatureClassPt = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(EnterpriseShpName);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Log.Error(ex);
+                    throw ex;
+                }
+            }             
+        }
 
         /// <summary>
         /// 定义要创建的shp文件的字段集,使用全局的shp空间坐标系 
@@ -113,7 +144,7 @@ namespace DataHelper.FuncSet.EGIndex
             return fields;
         }
 
-		public string ShpName { get; set; }
+		public string EnterpriseShpName { get; set; }
 		
 		// 定义生成shp的字段集
 		public static IFields FieldsPt = null;

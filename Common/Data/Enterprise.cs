@@ -28,6 +28,11 @@ namespace Common
 	    public Point LngLat { get; set; }
 		public int man { get; set; }
         public IPoint GeoPoint { get; set; }    
-        public Point Point { get; private set; }  
+        public Point Point { get; private set; }
+
+        public override string ToString()
+        {
+            return string.Format("{0}, {1}, {2}, {3}", ID, Point.X, Point.Y, man);
+        }
     }
 }

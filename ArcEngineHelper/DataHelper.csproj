@@ -85,12 +85,22 @@
     <Compile Include="DataProcess\FindMedium.cs" />
     <Compile Include="DataProcess\FindMediumBase.cs" />
     <Compile Include="DataProcess\FindMediumEx.cs" />
+    <Compile Include="FuncSet\Convert\IConvert.cs" />
+    <Compile Include="FuncSet\Convert\LatiAndLongi2CountyName.cs" />
     <Compile Include="FuncSet\EGIndex\BaseEGIndex.cs" />
     <Compile Include="FuncSet\EGIndex\EGIndexBaseUtil.cs" />
     <Compile Include="FuncSet\EGIndex\EGIndex.cs" />
     <Compile Include="FuncSet\EGIndex\EGEnterpriseData.cs" />
     <Compile Include="FuncSet\EGIndex\EGIndexShpInfo.cs" />
     <Compile Include="FuncSet\EGIndex\RobustCheck\EGRobust.cs" />
+    <Compile Include="FuncSet\EnterpriseInCircleBufferStatics\CircleBuffer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FuncSet\EnterpriseInCircleBufferStatics\CircleBuffer.Designer.cs">
+      <DependentUpon>CircleBuffer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FuncSet\EnterpriseInCircleBufferStatics\EnterpriseInCircleBufferStatics.cs" />
+    <Compile Include="FuncSet\EnterpriseInCircleBufferStatics\GeneralStatics.cs" />
     <Compile Include="FuncSet\Kd\KdAllTable\KdAllTable.cs" />
     <Compile Include="FuncSet\KdBase\KdBase.cs" />
     <Compile Include="FuncSet\KdBase\Kd_Mdl.cs" />
@@ -115,6 +125,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="FuncSet\EnterpriseInCircleBufferStatics\CircleBuffer.resx">
+      <DependentUpon>CircleBuffer.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FuncSet\SimulateTimes\SimulateTimes.resx">
       <DependentUpon>SimulateTimes.cs</DependentUpon>
     </EmbeddedResource>
@@ -167,5 +180,6 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
