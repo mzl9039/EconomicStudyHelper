@@ -125,44 +125,41 @@ namespace DataHelper.FuncSet.ShortestPath
            
             try
             {
-                IFeature feature;
-                IFeatureCursor tarFeatCrsr = Geodatabase.GeodatabaseOp.QuerySearch(tarFeatCls, null, null, false);
+                IFeature src, tar;
+                int featureNum = tarFeatCls.FeatureCount(null);
+                
                 int idxId = tarFeatCls.FindField("ID");
                 if (idxId < 0)
                 {
                     Log.Log.Warn(string.Format("在shp文件:{0}中无法找到字段:{1}, 异常退出", tarShpName, "ID"));
                     return;
                 }
-
-                while ((feature = tarFeatCrsr.NextFeature()) != null)
+                for (int i = 0; i < featureNum; i++)
                 {
-                    string id = feature.Value[idxId].ToString();
-                    //string srcShpName = string.Format("{0}\\{1}.shp", tmpDir, id);
-                    List<double> tmpCost = new List<double>(tarFeatCls.FeatureCount(null));                    
-                    /// <summary>
-                    /// 代码网络分析中起点的 featureClass
-                    /// 对于当前这种数据巨大的情况（一个shp可能有40w个点，计算两两之间的最短路径）
-                    /// 需要对点进行循环，所以起点featureClass需要手动生成，用完后自动删除
-                    /// </summary>                    
-                    IFeatureClass lines = shpNa.updateNetworkDataset(feature);
-                    IFeatureClass origins = shpNa.getFeatureClassFromNAClasses("Origins");
-                    IFeatureClass destinations = shpNa.getFeatureClassFromNAClasses("Destinations");
-                    if (lines != null)
+                    src = tarFeatCls.GetFeature(i);
+                    string srcId = src.Value[idxId].ToString();
+                    List<double> tmpCost = new List<double>(tarFeatCls.FeatureCount(null));
+                    Log.Log.Info(string.Format("src: {0} is being caculated.", srcId));
+                    for (int j = 0; j < featureNum; j++)
                     {
-                        int idxOriginId = lines.Fields.FindField("OriginID");
-                        int idxDestinationId = lines.Fields.FindField("DestinationID");
-                        int idxName = lines.Fields.FindField("Name");
-                        int idxTotalCost = lines.Fields.FindField("Total_Cost");
-                        if (idxOriginId < 0 || idxDestinationId < 0 || idxName < 0 || idxTotalCost < 0)
+                        if (i == j) continue;
+
+                        tar = tarFeatCls.GetFeature(j);
+                        string tarId = tar.Value[idxId].ToString();
+
+                        /// <summary>
+                        /// 代码网络分析中起点的 featureClass
+                        /// 对于当前这种数据巨大的情况（一个shp可能有40w个点，计算两两之间的最短路径）
+                        /// 需要对点进行循环，所以起点featureClass需要手动生成，用完后自动删除
+                        /// </summary>                    
+                        IFeatureClass lines = shpNa.updateNetworkDataset(src, tar);
+                        if (lines != null)
                         {
-                            Log.Log.Warn(string.Format("格式不正确：idxOriginId:{0}, idxDestinationId:{1}, idxName: {2], idxTotalCost: {3}", 
-                                idxOriginId, idxDestinationId, idxName, idxTotalCost));
-                            continue;
-                        }
-                        IFeatureCursor cursor = Geodatabase.GeodatabaseOp.QuerySearch(lines, null, null, false);
-                        IFeature railFeat;
-                        while ((railFeat = cursor.NextFeature()) != null)
-                        {
+                            int idxName = lines.Fields.FindField("Name");
+                            int idxTotalCost = lines.Fields.FindField("Total_Cost");
+
+                            // 因为起点和终点都只有一个，所以 lines 只会有一个feature，其 ObjectId 一定为 1
+                            IFeature railFeat = lines.GetFeature(1);
                             double totalCost = -1;
                             try
                             {
@@ -170,63 +167,48 @@ namespace DataHelper.FuncSet.ShortestPath
                             }
                             catch (System.Exception ex)
                             {
-                                Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", railFeat.Value[idxName].ToString()), ex);	
+                                Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", railFeat.Value[idxName].ToString()), ex);
                                 continue;
                             }
-                            // 遍历网络分析结果，获取相应的 origin name 和 dest name
-                            string[] names = railFeat.Value[idxName].ToString().Split(new char[] { '-', ' '});
-                            if (names[0] == names[names.Length - 1]) continue;
-                            
+
                             int oriClosedFID = -1, destClosedFID = -1;
                             double oriDist = -1, destDist = -1;
-                            // 根据起点终点的ID获得feature
-                            string originId = railFeat.Value[idxOriginId].ToString();
-                            string destinationId = railFeat.Value[idxDestinationId].ToString();
-                            IFeature origin = origins.GetFeature(int.Parse(originId));
-                            IFeature destination = destinations.GetFeature(int.Parse(destinationId));
-                            if (origin == null || destination == null)
-                            {
-                                Log.Log.Warn(string.Format("can't find feature, origin of FID:{0} is null?: {1}, destination of FID:{2} is null?: {3}", 
-                                    oriClosedFID, origin == null, destClosedFID, destination == null));
-                                continue;
-                            }
                             // 尝试根据 feature 获得到最近的铁路线上的点的距离
-                            indexQuery2.NearestFeature(origin.Shape as IPoint, out oriClosedFID, out oriDist);
-                            indexQuery2.NearestFeature(destination.Shape as IPoint, out destClosedFID, out destDist);
+                            indexQuery2.NearestFeature(src.Shape as IPoint, out oriClosedFID, out oriDist);
+                            indexQuery2.NearestFeature(tar.Shape as IPoint, out destClosedFID, out destDist);
                             if (oriClosedFID == -1 || destClosedFID == -1)
                             {
-                                Log.Log.Warn(string.Format("failed to find closed point, oriClosedFID: {0}, destClosedFID: {1}", 
+                                Log.Log.Warn(string.Format("failed to find closed point, oriClosedFID: {0}, destClosedFID: {1}",
                                     oriClosedFID, destClosedFID));
                                 continue;
                             }
                             // 计算走铁路时的总cost
                             double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
-                            IProximityOperator proximityOp = (origin.Shape as IPoint) as IProximityOperator;
-                            double excelDistance = SPUtils.caculateStraightDistance((origin.Shape as IPoint), (destination.Shape as IPoint));
+                            IProximityOperator proximityOp = (src.Shape as IPoint) as IProximityOperator;
+                            double excelDistance = SPUtils.caculateStraightDistance((src.Shape as IPoint), (tar.Shape as IPoint));
                             double excelCost = 60 * excelDistance / speed;
                             tmpCost.Add(Math.Min(excelCost, railCost));
                         }
-                        double avg = tmpCost.Sum() / tmpCost.Count();
-                        QuickSelect qSelect = new QuickSelect(tmpCost.Count());
-                        double mid = qSelect.QSelect(tmpCost.ToArray(), 0, tmpCost.Count() - 1, tmpCost.Count() / 2);
-                        List<double> val = new List<double>(2);
-                        val.Add(avg);
-                        val.Add(mid);
-                        result.Add(id, val);
-                        if (result.Count() >= 1000)
+                        else
                         {
-                            write();
-                            result.Clear();
+                            Log.Log.Error(string.Format("feature: {0} is failed to get NA result！", tarId));
+                            continue;
                         }
-                        System.Runtime.InteropServices.Marshal.ReleaseComObject(cursor);
                     }
-                    else
+
+                    double avg = tmpCost.Sum() / tmpCost.Count();
+                    QuickSelect qSelect = new QuickSelect(tmpCost.Count());
+                    double mid = qSelect.QSelect(tmpCost.ToArray(), 0, tmpCost.Count() - 1, tmpCost.Count() / 2);
+                    List<double> val = new List<double>(2);
+                    val.Add(avg);
+                    val.Add(mid);
+                    result.Add(srcId, val);
+                    if (result.Count() >= 1000)
                     {
-                        Log.Log.Error(string.Format("feature: {0} is failed to get NA result！", id));
-                        continue;
+                        write();
+                        result.Clear();
                     }
                 }
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(tarFeatCrsr);
             }
             catch (System.Exception ex)
             {
