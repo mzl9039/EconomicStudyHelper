@@ -58,11 +58,15 @@ namespace EconomicStudyHelper
         static bool AoInitializeFirst(ref LicenseInitializer m_AOLicenseInitialzer)
         {
             bool bInitialized = true;
+
+            ESRI.ArcGIS.RuntimeManager.Bind(ESRI.ArcGIS.ProductCode.EngineOrDesktop);
+
             m_AOLicenseInitialzer = new LicenseInitializer();
             bInitialized = m_AOLicenseInitialzer.InitializeApplication(
                 new esriLicenseProductCode[] { esriLicenseProductCode.esriLicenseProductCodeEngine },
                 new esriLicenseExtensionCode[] { esriLicenseExtensionCode.esriLicenseExtensionCode3DAnalyst,
-                                                 esriLicenseExtensionCode.esriLicenseExtensionCodeSpatialAnalyst});
+                                                 esriLicenseExtensionCode.esriLicenseExtensionCodeSpatialAnalyst,
+                                                 esriLicenseExtensionCode.esriLicenseExtensionCodeNetwork});
 
             if (bInitialized == false)
             {

@@ -1,25 +1,32 @@
 ﻿using Common;
+using DataHelper.BaseUtil;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
-using DataHelper.BaseUtil;
-using System.Threading.Tasks;
 
 namespace DataHelper.FuncSet.EnterpriseInCircleBufferStatics
 {
-    public class EnterpriseInCircleBufferStatics
+    public class CircleSearchInAllEnterprises
     {
-        public EnterpriseInCircleBufferStatics() { }
+        public CircleSearchInAllEnterprises() { }
 
-        public EnterpriseInCircleBufferStatics(string excelFileName, double radius) {
+        public CircleSearchInAllEnterprises(string excelFileName, double radius, List<Enterprise> allEnterprises)
+        {
             this.excelFileName = excelFileName;
             this.radius = radius;
-            this.excelFileId = Path.GetFileNameWithoutExtension(this.excelFileName).TrimEnd(new char[] { 'g','p','s',' ' });
+            this.allEnterprises = allEnterprises;
+            this.excelFileId = Path.GetFileNameWithoutExtension(this.excelFileName).TrimEnd(new char[] { 'g', 'p', 's', ' ' });
             this.GetEnterprises();
             this.GetOutputFileName();
+
+            if (File.Exists(this.outputFileName))
+            {
+                File.Delete(outputFileName);
+            }
+            using (FileStream fs = new FileStream(outputFileName, FileMode.Create)) { }
         }
 
         public void GetEnterprises()
@@ -31,12 +38,13 @@ namespace DataHelper.FuncSet.EnterpriseInCircleBufferStatics
             }
         }
 
-        public void GetOutputFileName() {
+        public void GetOutputFileName()
+        {
             if (this.excelFileName != "")
             {
                 string path = System.IO.Path.GetDirectoryName(this.excelFileName);
                 string filenameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(this.excelFileName);
-                this.outputFileName = string.Format("{0}\\{1}.txt", path, filenameWithoutExt);
+                this.outputFileName = string.Format("{0}\\{1}_所有企业.txt", path, filenameWithoutExt);
             }
             else
             {
@@ -44,13 +52,14 @@ namespace DataHelper.FuncSet.EnterpriseInCircleBufferStatics
             }
         }
 
-        public SortedDictionary<int, List<Output>> CaculateStatics() {
+        public void CaculateStatics()
+        {
             SortedDictionary<int, List<Output>> result = new SortedDictionary<int, List<Output>>();
 
             foreach (Enterprise e in this.enterprises)
             {
                 List<Enterprise> tmp = new List<Enterprise>();
-                this.enterprises.ForEach(inn =>
+                this.allEnterprises.ForEach(inn =>
                 {
                     double dis = Math.Sqrt((e.Point.X - inn.Point.X) * (e.Point.X - inn.Point.X) +
                         (e.Point.Y - inn.Point.Y) * (e.Point.Y - inn.Point.Y)) / 1000;
@@ -64,28 +73,29 @@ namespace DataHelper.FuncSet.EnterpriseInCircleBufferStatics
                 List<Output> output = tmp.Select(t => new Output(this.excelFileId, e.ID, t.ID, total)).ToList();
                 string id = e.ID.Split(new char[] { '.' })[1];
                 result.Add(int.Parse(id), output);
-            }
 
-            return result;
+                if (result.Count() > 5000)
+                {
+                    WriteOutputFileName(result);
+                    result.Clear();
+                }
+            }
+            if (result.Count() > 0)
+            {
+                WriteOutputFileName(result);
+                result.Clear();
+            }
         }
 
-        public void WriteOutputFileName() {
-            if (File.Exists(this.outputFileName))
+        private void WriteOutputFileName(SortedDictionary<int, List<Output>> output)
+        {
+            using (FileStream fs = new FileStream(this.outputFileName, FileMode.Append))
             {
-                Log.Log.Info(string.Format("文件{0}已经存在，跳过该文件的输出。", this.outputFileName));
-            }
-            else
-            {
-                SortedDictionary<int, List<Output>> output = this.CaculateStatics();         
-                
-                using (FileStream fs = new FileStream(this.outputFileName, FileMode.Create))
+                StreamWriter sw = new StreamWriter(fs);
+                foreach (KeyValuePair<int, List<Output>> kv in output)
                 {
-                    StreamWriter sw = new StreamWriter(fs);
-                    foreach (KeyValuePair<int, List<Output>> kv in output)
-                    {
-                        kv.Value.ForEach(l => sw.WriteLine(l.ToString()));
-                        sw.Flush();
-                    }
+                    kv.Value.ForEach(l => sw.WriteLine(l.ToString()));
+                    sw.Flush();
                 }
             }
         }
@@ -93,6 +103,7 @@ namespace DataHelper.FuncSet.EnterpriseInCircleBufferStatics
         private string excelFileName = "";
         private string excelFileId = "";
         private List<Enterprise> enterprises = new List<Enterprise>();
+        private readonly List<Enterprise> allEnterprises;
         private double radius = 0;        // 以 circleId 为圆心的buffer的大小，即圆的半径
         private string outputFileName = "";
         private List<Output> outputs = new List<Output>();

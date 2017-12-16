@@ -17,7 +17,7 @@ namespace DataHelper
 {
     public sealed class LicenseInitializer
     {
-        private IAoInitialize m_AoInitialize = new AoInitializeClass();
+        private IAoInitialize m_AoInitialize = new AoInitialize();
 
         //Requested products and extensions
         private esriLicenseProductCode[] m_productsCode;

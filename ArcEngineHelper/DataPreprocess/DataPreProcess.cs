@@ -89,6 +89,52 @@ namespace DataHelper
             return result;
         }
 
+        public static string GetFileName(string title, string ext)
+        {
+            string result = null;
+            try
+            {
+                OpenFileDialog ofd = new OpenFileDialog();
+                ofd.Title = title;
+                ofd.Filter = string.Format("* | *.{0}", ext);
+                ofd.Multiselect = false;
+                ofd.RestoreDirectory = true;
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    result = ofd.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Log.Error(ex.ToString());
+                //throw ex;
+            }
+            return result;
+        }
+
+        public static string GetNDName(string title)
+        {
+            string result = null;
+            try
+            {
+                OpenFileDialog ofd = new OpenFileDialog();
+                ofd.Title = title;
+                ofd.Filter = "NetworkDataset 文件 | *.nd";
+                ofd.Multiselect = false;
+                ofd.RestoreDirectory = true;
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    result = ofd.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Log.Error(ex.ToString());
+                //throw ex;
+            }
+            return result;
+        }
+
         public static DataTable GenerateDataTable()
         {
             DataTable table = new DataTable();

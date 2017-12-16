@@ -47,7 +47,7 @@ namespace Geodatabase
         /// </summary>
         /// <param name="featClass">目标图层</param>
         /// <param name="featSource">源要素</param>
-        public static void CreateFeature(IFeatureClass featClass, IFeature featSource)
+        public static int CreateFeature(IFeatureClass featClass, IFeature featSource)
         {
             IFeature newFeature = featClass.CreateFeature();
 
@@ -57,7 +57,9 @@ namespace Geodatabase
 
                 newFeature.Shape = featSource.Shape;
                 newFeature.Store();
+                return newFeature.OID;
             }
+            return -1;
         }
 
         /// <summary>
@@ -503,6 +505,125 @@ namespace Geodatabase
             }
 
             return maxID;
+        }
+
+        #endregion
+
+        #region About network analysis
+
+        ///<summary>打开并返回网络数据集.</summary>
+        ///
+        ///<param name="networkDatasetWorkspace">An IWorkspace interface that contains the network dataset</param>
+        ///<param name="networkDatasetName">A System.String that is the name of the network dataset. Example: "roads"</param>
+        ///<param name="featureDatasetName">A System.String that is the name of the feature dataset that contains the network dataset. This name is only required for geodatabase workspaces. An empty string may be passed in for shapefile/SDC workspaces. Example: "Highways" or "".</param>
+        ///
+        ///<returns>The INetworkDataset interface of the opened network dataset</returns>
+        /// 
+        ///<remarks></remarks>
+        public static ESRI.ArcGIS.Geodatabase.INetworkDataset OpenNetworkDataset(ESRI.ArcGIS.Geodatabase.IWorkspace networkDatasetWorkspace, System.String networkDatasetName, System.String featureDatasetName)
+        {
+            if (networkDatasetWorkspace == null || networkDatasetName == "" || featureDatasetName == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                ESRI.ArcGIS.Geodatabase.IDatasetContainer3 datasetContainer3 = null;
+                switch (networkDatasetWorkspace.Type)
+                {
+                    case ESRI.ArcGIS.Geodatabase.esriWorkspaceType.esriFileSystemWorkspace:
+
+                        // Shapefile or SDC network dataset workspace
+                        ESRI.ArcGIS.Geodatabase.IWorkspaceExtensionManager workspaceExtensionManager = networkDatasetWorkspace as ESRI.ArcGIS.Geodatabase.IWorkspaceExtensionManager; // Dynamic Cast
+                        ESRI.ArcGIS.esriSystem.UID networkID = new ESRI.ArcGIS.esriSystem.UIDClass();
+
+                        networkID.Value = "esriGeoDatabase.NetworkDatasetWorkspaceExtension";
+                        ESRI.ArcGIS.Geodatabase.IWorkspaceExtension workspaceExtension = workspaceExtensionManager.FindExtension(networkID);
+                        datasetContainer3 = workspaceExtension as ESRI.ArcGIS.Geodatabase.IDatasetContainer3; // Dynamic Cast
+                        break;
+
+                    case ESRI.ArcGIS.Geodatabase.esriWorkspaceType.esriLocalDatabaseWorkspace:
+
+                    // Personal Geodatabase or File Geodatabase network dataset workspace
+
+                    case ESRI.ArcGIS.Geodatabase.esriWorkspaceType.esriRemoteDatabaseWorkspace:
+
+                        // SDE Geodatabase network dataset workspace
+                        ESRI.ArcGIS.Geodatabase.IFeatureWorkspace featureWorkspace = networkDatasetWorkspace as ESRI.ArcGIS.Geodatabase.IFeatureWorkspace; // Dynamic Cast
+                        ESRI.ArcGIS.Geodatabase.IFeatureDataset featureDataset = featureWorkspace.OpenFeatureDataset(featureDatasetName);
+                        ESRI.ArcGIS.Geodatabase.IFeatureDatasetExtensionContainer featureDatasetExtensionContainer = featureDataset as ESRI.ArcGIS.Geodatabase.IFeatureDatasetExtensionContainer; // Dynamic Cast
+                        ESRI.ArcGIS.Geodatabase.IFeatureDatasetExtension featureDatasetExtension = featureDatasetExtensionContainer.FindExtension(ESRI.ArcGIS.Geodatabase.esriDatasetType.esriDTNetworkDataset);
+                        datasetContainer3 = featureDatasetExtension as ESRI.ArcGIS.Geodatabase.IDatasetContainer3; // Dynamic Cast
+                        break;
+                }
+
+                if (datasetContainer3 == null)
+                    return null;
+
+                ESRI.ArcGIS.Geodatabase.IDataset dataset = datasetContainer3.get_DatasetByName(ESRI.ArcGIS.Geodatabase.esriDatasetType.esriDTNetworkDataset, networkDatasetName);
+
+                return dataset as ESRI.ArcGIS.Geodatabase.INetworkDataset; // Dynamic Cast
+            }
+            catch (System.Exception ex)
+            {
+                Log.Log.Error("OpenNetworkDataset failed", ex);
+            }
+            return null;            
+        }
+
+        ///<summary>Set OD cost matrix solver parameters, including settings.</summary>
+        /// 
+        ///<param name="naSolver">An INASolver interface.</param>
+        ///<param name="defaultCutoff">A System.Object that is the default cutoff value to stop traversing. Ex: Nothing (VBNet) or null (C#)</param>
+        ///<param name="defaultTargetDestinationCount">A System.Object that is the default number of destinations to find. Ex: Nothing (VBNet) or null (C#)</param>
+        ///
+        ///<returns>An INAODCostMatrixSolver2 with default parameters set.</returns>
+        ///
+        ///<remarks>Solving for 10 destinations will return the cost-distance to the 10 closest destinations from each origin. If this value is Nothing or null, all destinations will be found.</remarks>
+        public static ESRI.ArcGIS.NetworkAnalyst.INAODCostMatrixSolver2 SetODCostMatrixProperties(ESRI.ArcGIS.NetworkAnalyst.INASolver naSolver, object defaultCutoff, object defaultTargetDestinationCount)
+        {
+
+            // Set OD cost matrix solver parameters, including settings for...
+            ESRI.ArcGIS.NetworkAnalyst.INAODCostMatrixSolver2 naODCostMatrixSolver = (ESRI.ArcGIS.NetworkAnalyst.INAODCostMatrixSolver2)naSolver;
+
+            // ...default cutoff
+            naODCostMatrixSolver.DefaultCutoff = defaultCutoff;
+
+            // ...number of destinations to find
+            naODCostMatrixSolver.DefaultTargetDestinationCount = defaultTargetDestinationCount;
+
+            // ...output
+            naODCostMatrixSolver.OutputLines = ESRI.ArcGIS.NetworkAnalyst.esriNAOutputLineType.esriNAOutputLineStraight;
+            naODCostMatrixSolver.MatrixResultType = ESRI.ArcGIS.NetworkAnalyst.esriNAODCostMatrixType.esriNAODCostMatrixFull;
+            naODCostMatrixSolver.PopulateODLines = false;
+
+            return naODCostMatrixSolver;
+
+        }
+
+        ///<summary>创建一个新的 OD 成本矩阵图层 OD cost matrix layer.</summary>
+        ///  
+        ///<param name="networkDataset">An INetworkDataset interface that is the network dataset on which to perform the OD cost matrix analysis.</param>
+        ///  
+        ///<returns>An INALayer3 interface that is the newly created network analysis layer.</returns>
+        public static ESRI.ArcGIS.NetworkAnalyst.INALayer3 CreateODCostMatrixLayer(ESRI.ArcGIS.Geodatabase.INetworkDataset networkDataset)
+        {
+            ESRI.ArcGIS.NetworkAnalyst.INAODCostMatrixSolver naAODCostMatrixSolver = new ESRI.ArcGIS.NetworkAnalyst.NAODCostMatrixSolverClass();
+            ESRI.ArcGIS.NetworkAnalyst.INASolver naSolver = naAODCostMatrixSolver as ESRI.ArcGIS.NetworkAnalyst.INASolver;
+
+            ESRI.ArcGIS.Geodatabase.IDatasetComponent datasetComponent = networkDataset as ESRI.ArcGIS.Geodatabase.IDatasetComponent; // Dynamic Cast
+            ESRI.ArcGIS.Geodatabase.IDENetworkDataset deNetworkDataset = datasetComponent.DataElement as ESRI.ArcGIS.Geodatabase.IDENetworkDataset; // Dynamic Cast
+            ESRI.ArcGIS.NetworkAnalyst.INAContext naContext = naSolver.CreateContext(deNetworkDataset, naSolver.Name);
+            ESRI.ArcGIS.NetworkAnalyst.INAContextEdit naContextEdit = naContext as ESRI.ArcGIS.NetworkAnalyst.INAContextEdit; // Dynamic Cast
+
+            ESRI.ArcGIS.Geodatabase.IGPMessages gpMessages = new ESRI.ArcGIS.Geodatabase.GPMessagesClass();
+            naContextEdit.Bind(networkDataset, gpMessages);
+
+            ESRI.ArcGIS.NetworkAnalyst.INALayer naLayer = naSolver.CreateLayer(naContext);
+            ESRI.ArcGIS.NetworkAnalyst.INALayer3 naLayer3 = naLayer as ESRI.ArcGIS.NetworkAnalyst.INALayer3;
+            
+            return naLayer3;
         }
 
         #endregion
@@ -1237,8 +1358,7 @@ namespace Geodatabase
         }
 
         #endregion
-
-
+    
         #region added by yinth
 
         public static string GetDataSetBrowseName(IFeatureClass feaCls)

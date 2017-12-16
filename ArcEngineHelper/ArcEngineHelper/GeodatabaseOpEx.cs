@@ -899,7 +899,7 @@ namespace Geodatabase
             ESRI.ArcGIS.Geodatabase.IWorkspaceName workspaceName = workspaceFactory.Create(path, pgdbname, null, 0);
 
             // Cast for IName.
-            ESRI.ArcGIS.esriSystem.IName name = (ESRI.ArcGIS.esriSystem.IName)workspaceName;
+            IName name = workspaceName as IName;
 
             //Open a reference to the Access workspace through the name object.
             ESRI.ArcGIS.Geodatabase.IWorkspace pGDB_Wor = (IWorkspace)name.Open();
