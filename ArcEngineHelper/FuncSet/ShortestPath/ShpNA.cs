@@ -74,7 +74,7 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         private INALayer3 odMatrixLayer = null;
 
-        public bool init(IFeatureClass destFeatCls)
+        public bool init(IFeatureClass destFeatCls, string cutOff)
         {
             // 设置终点 feature Class
             if (destFeatCls == null)
@@ -82,9 +82,12 @@ namespace DataHelper.FuncSet.ShortestPath
                 Log.Log.Warn("destFeatCls can't not be null");
                 return false;
             }
+            // 设置目标图层，以便后续继续创建OD矩阵里设置dest图层
+            destinationFeatCls = destFeatCls;
+
             fields = destFeatCls.Fields;
             // 获取ND文件的Dataset
-            string railName = DataPreProcess.GetFileName("选择公路/铁路线的mdb文件", "mdb");
+            string railName = DataPreProcess.GetFileName("选择公路/铁路线的mdb文件", "gdb");
             if (railName == null || railName == "" || !File.Exists(railName))
             {
                 Log.Log.Warn(string.Format("选择的mdb文件名为空，或文件不存在，文件名为：{0}.", railName));
@@ -99,7 +102,7 @@ namespace DataHelper.FuncSet.ShortestPath
                     // 如果mdb文件已存在，则直接打开，否则就抛异常
                     if (File.Exists(railName))
                     {
-                        mdbWorkspace = Geodatabase.GeodatabaseOp.Open_pGDB_Workspace(railName);
+                        mdbWorkspace = Geodatabase.GeodatabaseOp.OpenFromFile_fGDB_Workspace(railName);
                         if (mdbWorkspace == null) throw new Exception(string.Format("文件{0}存在，但打开Personal Geodatabase失败", railName));
                     }
                     if (mdbWorkspace == null) throw new Exception(string.Format("文件{0}不存在", railName));
@@ -129,8 +132,9 @@ namespace DataHelper.FuncSet.ShortestPath
 
                 if (ndDataset != null)
                 {
-                    m_NAContext = CreateSolverContext();
+                    m_NAContext = CreateSolverContext(cutOff);
                     odMatrixLayer = CreateODCostMatrixLayer();
+                    LoadNANetworkLocations("Destinations", destinationFeatCls, 5000);
                 }
             }
         }
@@ -141,14 +145,12 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         /// <param name="origin"></param>
         /// <returns></returns>
-        public IFeatureClass updateNetworkDataset(IFeature src, IFeature dest)
+        public IFeatureClass updateNetworkDataset(IFeature src)
         {
-            updateOriginAndDestFeatClsByFeature(src, dest);
+            updateOriginAndDestFeatClsByFeature(src);
             // 删除所有的 network dataset
             //deleteNetworkDataset();
-            // 创建新的 network dataset            
-            m_NAContext = CreateSolverContext();
-            odMatrixLayer = CreateODCostMatrixLayer();
+            // 创建新的 network dataset
             return setFeatCls();
         }
 
@@ -157,7 +159,7 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         /// <param name="feature"></param>
         /// <returns></returns>
-        private void updateOriginAndDestFeatClsByFeature(IFeature src, IFeature dest)
+        private void updateOriginAndDestFeatClsByFeature(IFeature src)
         {
             if (featureDataset == null || src == null)
             {
@@ -168,8 +170,6 @@ namespace DataHelper.FuncSet.ShortestPath
             {
                 originFeatCls = createFeatureClass(origin);
                 Geodatabase.GeodatabaseOp.CreateFeature(originFeatCls, src);
-                destinationFeatCls = createFeatureClass(destination);
-                Geodatabase.GeodatabaseOp.CreateFeature(destinationFeatCls, dest);
             }
             catch (System.Exception ex)
             {
@@ -212,8 +212,7 @@ namespace DataHelper.FuncSet.ShortestPath
         /// <param name="dstFeatCls"></param>
         /// <returns></returns>
         private IFeatureClass setFeatCls() {
-            LoadNANetworkLocations("Origins", originFeatCls, 5000);
-            LoadNANetworkLocations("Destinations", destinationFeatCls, 5000);
+            LoadNANetworkLocations("Origins", originFeatCls, 5000);            
             IGPMessages gpMessages = new GPMessagesClass();
             m_NAContext.Solver.UpdateContext(m_NAContext, GetDENetworkDataset(ndDataset), gpMessages);
             m_NAContext.Solver.Solve(m_NAContext, gpMessages, null);
@@ -255,7 +254,8 @@ namespace DataHelper.FuncSet.ShortestPath
             classLoader.Locator = m_NAContext.Locator;
             classLoader.Locator.SnapToleranceUnits = ESRI.ArcGIS.esriSystem.esriUnits.esriKilometers;
             if (maxSnapTolerance > 0) ((INALocator3)classLoader.Locator).MaxSnapTolerance = maxSnapTolerance;
-            classLoader.NAClass = naClass;
+            classLoader.NAClass = naClass;           
+            
 
             // Create field map to automatically map fields from input class to NAClass
             INAClassFieldMap fieldMap = new NAClassFieldMapClass();
@@ -268,6 +268,7 @@ namespace DataHelper.FuncSet.ShortestPath
             INALocator3 locator = m_NAContext.Locator as INALocator3;
             locator.ExcludeRestrictedElements = true;
             locator.CacheRestrictedElements(m_NAContext);
+            
 
             // Load network locations
             int rowsIn = 0;
@@ -296,7 +297,7 @@ namespace DataHelper.FuncSet.ShortestPath
         /// Create NASolver and NAContext
         /// </summary>
         /// <returns>NAContext</returns>
-        private INAContext CreateSolverContext()
+        private INAContext CreateSolverContext(string cutoff)
         {
             //Get the data element
             IDENetworkDataset deNDS = GetDENetworkDataset(ndDataset);
@@ -304,6 +305,8 @@ namespace DataHelper.FuncSet.ShortestPath
             // 设置 output Lines 为 no lines
             naAODCostMatrixSolver.OutputLines = esriNAOutputLineType.esriNAOutputLineNone;
             INASolver naSolver = naAODCostMatrixSolver as ESRI.ArcGIS.NetworkAnalyst.INASolver;
+            INAClosestFacilitySolver cfSolver = naSolver as INAClosestFacilitySolver;
+            cfSolver.DefaultCutoff = cutoff;
             INAContextEdit contextEdit = naSolver.CreateContext(deNDS, naSolver.Name) as INAContextEdit;
             //Bind a context using the network dataset 
             contextEdit.Bind(ndDataset, new GPMessagesClass());
@@ -325,6 +328,17 @@ namespace DataHelper.FuncSet.ShortestPath
 
             ESRI.ArcGIS.NetworkAnalyst.INALayer naLayer = m_NAContext.Solver.CreateLayer(m_NAContext);
             return naLayer as ESRI.ArcGIS.NetworkAnalyst.INALayer3;
+        }
+
+        /// <summary>
+        /// Encapsulates returning an empty string if the object is NULL.
+        /// </summary>
+        private string GetStringFromObject(object value)
+        {
+            if (value == null)
+                return "";
+            else
+                return value.ToString();
         }
     }
 }

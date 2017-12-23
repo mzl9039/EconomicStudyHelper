@@ -12,9 +12,14 @@ namespace DataHelper.FuncSet.ShortestPath
     public partial class GetSpeed : Form
     {
         private double speed = -1;
+        private string cutOff = "";
 
         public double Speed() {
             return this.speed;
+        }
+
+        public string CutOff() {
+            return this.cutOff;
         }
 
         public GetSpeed()
@@ -29,13 +34,24 @@ namespace DataHelper.FuncSet.ShortestPath
                 if (string.IsNullOrWhiteSpace(txtBox_speed.Text))
                 {
                     Log.Log.Warn("必须填写速度值!");
+                    return;
                 }
                 else
                 {
                     string val = txtBox_speed.Text.Trim();
                     this.speed = double.Parse(val);
-                    this.DialogResult = DialogResult.OK;
                 }
+                if (string.IsNullOrWhiteSpace(txt_cutOff.Text))
+                {
+                    Log.Log.Warn("必须填写默认的CutOff值");
+                    return;
+                }
+                else
+                {
+                    string val = txt_cutOff.Text.Trim();
+                    this.cutOff = val;                   
+                }
+                this.DialogResult = DialogResult.OK;
             }
             catch (System.Exception ex)
             {

@@ -31,14 +31,16 @@ namespace DataHelper.FuncSet.ShortestPath
         {
             GetSpeed getSpeed = new GetSpeed();
             double speed = -1;
+            string cutOff = "";
             if (getSpeed.ShowDialog() == DialogResult.OK)
             {
                 speed = getSpeed.Speed();
+                cutOff = getSpeed.CutOff();
             }
 
-            if (speed == -1)
+            if (speed == -1 || string.IsNullOrWhiteSpace(cutOff))
             {
-                Log.Log.Warn("无法正确获取速度，退出。");
+                Log.Log.Warn("无法正确获取速度或cutOff，退出。");
                 return;
             }
             string railPoints = DataPreProcess.GetShpName("获取公路/铁路线点集");
@@ -47,7 +49,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 Log.Log.Warn("公路/铁路线点集文件不存在");
                 return;
             }
-            SPStats stats = new SPStats(excels);
+            SPStats stats = new SPStats(excels, cutOff);
             stats.setSpeed(speed);
             stats.setRailPoints(railPoints);
             stats.caculateShortestPath();
