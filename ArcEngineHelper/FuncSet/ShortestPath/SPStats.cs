@@ -139,6 +139,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 {
                     src = tarFeatCls.GetFeature(i);
                     string srcId = src.Value[idxId].ToString();
+                    // 记录 Origin 点对应的需要统计的信息
                     List<double> tmpCost = new List<double>(tarFeatCls.FeatureCount(null));
                     Log.Log.Info(string.Format("src: {0} is being caculated.", srcId));                        
 
@@ -159,20 +160,20 @@ namespace DataHelper.FuncSet.ShortestPath
                             if (lines != null)
                             {
                                 int idxName = lines.Fields.FindField("Name");
-                                int idxTotalCost = lines.Fields.FindField("Total_Cost");
+                                //int idxTotalCost = lines.Fields.FindField("Total_Cost");
 
                                 // 因为起点和终点都只有一个，所以 lines 只会有一个feature，其 ObjectId 一定为 1
                                 IFeature railFeat = lines.GetFeature(1);
-                                double totalCost = -1;
-                                try
-                                {
-                                    totalCost = double.Parse(railFeat.Value[idxTotalCost].ToString());
-                                }
-                                catch (System.Exception ex)
-                                {
-                                    Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", railFeat.Value[idxName].ToString()), ex);
-                                    continue;
-                                }
+                                //double totalCost = -1;
+                                //try
+                                //{
+                                //    totalCost = double.Parse(railFeat.Value[idxTotalCost].ToString());
+                                //}
+                                //catch (System.Exception ex)
+                                //{
+                                //    Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", railFeat.Value[idxName].ToString()), ex);
+                                //    continue;
+                                //}
 
                                 int oriClosedFID = -1, destClosedFID = -1;
                                 double oriDist = -1, destDist = -1;
@@ -186,11 +187,11 @@ namespace DataHelper.FuncSet.ShortestPath
                                     continue;
                                 }
                                 // 计算走铁路时的总cost
-                                double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
-                                IProximityOperator proximityOp = (src.Shape as IPoint) as IProximityOperator;
-                                double excelDistance = SPUtils.caculateStraightDistance((src.Shape as IPoint), (tar.Shape as IPoint));
-                                double excelCost = 60 * excelDistance / speed;
-                                tmpCost.Add(Math.Min(excelCost, railCost));
+                                //double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
+                                //IProximityOperator proximityOp = (src.Shape as IPoint) as IProximityOperator;
+                                //double excelDistance = SPUtils.caculateStraightDistance((src.Shape as IPoint), (tar.Shape as IPoint));
+                                //double excelCost = 60 * excelDistance / speed;
+                                //tmpCost.Add(Math.Min(excelCost, railCost));
                             }
                             else
                             {
@@ -261,6 +262,29 @@ namespace DataHelper.FuncSet.ShortestPath
             index.FeatureClass = railFeatCls;
             index.set_OutputSpatialReference(railFeatCls.OIDFieldName, tGeodataset.SpatialReference);
             index.Index(trackCancel, tGeodataset.Extent);
+        }
+    }
+
+    class Stat
+    {
+        // 企业类型
+        public int type;
+        // 周边类型企业的数目
+        public int typeNum;
+        // 周边企业的人口数
+        public long popNum;
+
+        public Stat() { }
+        public Stat(int type, int typeNum, int popNum)
+        {
+            this.type = type;
+            this.typeNum = typeNum;
+            this.popNum = popNum;                
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}, {1}, {2}", type, typeNum, popNum);
         }
     }
 }

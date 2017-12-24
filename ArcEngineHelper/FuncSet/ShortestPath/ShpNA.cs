@@ -87,7 +87,7 @@ namespace DataHelper.FuncSet.ShortestPath
 
             fields = destFeatCls.Fields;
             // 获取ND文件的Dataset
-            string railName = DataPreProcess.GetFileName("选择公路/铁路线的mdb文件", "gdb");
+            string railName = DataPreProcess.GetFileName("选择公路/铁路线的mdb文件", "mdb");
             if (railName == null || railName == "" || !File.Exists(railName))
             {
                 Log.Log.Warn(string.Format("选择的mdb文件名为空，或文件不存在，文件名为：{0}.", railName));
@@ -102,7 +102,7 @@ namespace DataHelper.FuncSet.ShortestPath
                     // 如果mdb文件已存在，则直接打开，否则就抛异常
                     if (File.Exists(railName))
                     {
-                        mdbWorkspace = Geodatabase.GeodatabaseOp.OpenFromFile_fGDB_Workspace(railName);
+                        mdbWorkspace = Geodatabase.GeodatabaseOp.OpenFromFile_pGDB_Workspace(railName);
                         if (mdbWorkspace == null) throw new Exception(string.Format("文件{0}存在，但打开Personal Geodatabase失败", railName));
                     }
                     if (mdbWorkspace == null) throw new Exception(string.Format("文件{0}不存在", railName));
@@ -122,7 +122,19 @@ namespace DataHelper.FuncSet.ShortestPath
                     }
                     if (railwayFeatureClass == null) throw new Exception(string.Format("在featureDataset中不存在featureClass:{0}", railway));
                     ndDataset = Geodatabase.GeodatabaseOp.OpenNetworkDataset(mdbWorkspace, name + "_ND", name);
-                    return true;
+
+                    if (ndDataset != null)
+                    {
+                        m_NAContext = CreateSolverContext(cutOff);
+                        odMatrixLayer = CreateODCostMatrixLayer();
+                        LoadNANetworkLocations("Destinations", destinationFeatCls, 5000);
+                        return true;
+                    }
+                    else
+                    {
+                        Log.Log.Warn("无法打开 network dataset: " + name + "_ND");                        
+                        return false;
+                    }
                 }
                 catch (System.Exception ex)
                 {
@@ -130,12 +142,7 @@ namespace DataHelper.FuncSet.ShortestPath
                     return false;
                 }
 
-                if (ndDataset != null)
-                {
-                    m_NAContext = CreateSolverContext(cutOff);
-                    odMatrixLayer = CreateODCostMatrixLayer();
-                    LoadNANetworkLocations("Destinations", destinationFeatCls, 5000);
-                }
+                
             }
         }
 
