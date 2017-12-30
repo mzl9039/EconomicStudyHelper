@@ -1,0 +1,9 @@
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\log4net.xml
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\Common.dll
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\Common.pdb
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\Log.dll
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\log4net.dll
+D:\mzl\EconomicStudyHelper\Common\bin\Debug\Log.pdb
+D:\mzl\EconomicStudyHelper\Common\obj\Debug\Common.csprojResolveAssemblyReference.cache
+D:\mzl\EconomicStudyHelper\Common\obj\Debug\Common.dll
+D:\mzl\EconomicStudyHelper\Common\obj\Debug\Common.pdb

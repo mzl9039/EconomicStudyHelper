@@ -308,12 +308,12 @@ namespace DataHelper.FuncSet.ShortestPath
         {
             //Get the data element
             IDENetworkDataset deNDS = GetDENetworkDataset(ndDataset);
-            ESRI.ArcGIS.NetworkAnalyst.INAODCostMatrixSolver naAODCostMatrixSolver = new ESRI.ArcGIS.NetworkAnalyst.NAODCostMatrixSolverClass();
+            INAODCostMatrixSolver naAODCostMatrixSolver = new NAODCostMatrixSolverClass();
             // 设置 output Lines 为 no lines
             naAODCostMatrixSolver.OutputLines = esriNAOutputLineType.esriNAOutputLineNone;
-            INASolver naSolver = naAODCostMatrixSolver as ESRI.ArcGIS.NetworkAnalyst.INASolver;
-            INAClosestFacilitySolver cfSolver = naSolver as INAClosestFacilitySolver;
-            cfSolver.DefaultCutoff = cutoff;
+            INASolver naSolver = naAODCostMatrixSolver as INASolver;
+            INAODCostMatrixSolver2 cmSolver = (INAODCostMatrixSolver2)naSolver;
+            cmSolver.DefaultCutoff = cutoff;
             INAContextEdit contextEdit = naSolver.CreateContext(deNDS, naSolver.Name) as INAContextEdit;
             //Bind a context using the network dataset 
             contextEdit.Bind(ndDataset, new GPMessagesClass());

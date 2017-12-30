@@ -51,13 +51,17 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         private IIndexQuery2 indexQuery2 = null;
         /// <summary>
-        /// 记录各个点的cost的平均值和中位数
+        /// 记录各个点的周边各类型企业的数量及工人数量, 外层dict的key为企业ID，里面的dict的key为code, value 为pop和quan
         /// </summary>
-        private Dictionary<string, List<double>> result = new Dictionary<string, List<double>>();
+        private Dictionary<string, Dictionary<double,List<double>>> result = new Dictionary<string, Dictionary<double, List<double>>>();
         /// <summary>
         /// 输出文件的名字
         /// </summary>
         private string output = "";
+        /// <summary>
+        /// 最大时间限制，超过这个时间的cost都会被放弃
+        /// </summary>
+        private double cutOff = 0.0d;
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -65,6 +69,7 @@ namespace DataHelper.FuncSet.ShortestPath
         {
             try
             {
+                this.cutOff = double.Parse(cutOff);
                 // 获取所有企业点shp的featureClass
                 tarShpName = DataPreProcess.GetShpName("选择起点/终点的shp文件");
                 if (tarShpName == null || tarShpName == "" || !System.IO.File.Exists(tarShpName))
@@ -82,7 +87,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 using (System.IO.FileStream fs = new System.IO.FileStream(output, FileMode.Create))
                 {
                     StreamWriter sw = new StreamWriter(fs);
-                    sw.WriteLine(string.Format("id, avg, mid"));
+                    sw.WriteLine(string.Format("id, code, pop, quan"));
                     sw.Flush();
                 }
 
@@ -125,89 +130,149 @@ namespace DataHelper.FuncSet.ShortestPath
            
             try
             {
-                IFeature src, tar;
+                IFeature src, tar, line;
                 int featureNum = tarFeatCls.FeatureCount(null);
                 
                 int idxId = tarFeatCls.FindField("ID");
-                if (idxId < 0)
+                int idxPop = tarFeatCls.FindField("pop");
+                int idxCode = tarFeatCls.FindField("code");
+                int idxQuan = tarFeatCls.FindField("quan");
+                if (idxId < 0 || idxPop < 0 || idxCode < 0 || idxQuan < 0)
                 {
-                    Log.Log.Warn(string.Format("在shp文件:{0}中无法找到字段:{1}, 异常退出", tarShpName, "ID"));
+                    Log.Log.Warn(string.Format("在shp文件:{0}中无法找到所有字段，{1}:{5}, {2}:{6}, {3}:{7}, {4}:{8}, 异常退出", 
+                        tarShpName, "ID", "pop", "code", "quan", idxId, idxPop, idxCode, idxQuan));
                     return;
                 }
-
+                int idxLat2 = tarFeatCls.FindField("lat2");
+                int idxLng2 = tarFeatCls.FindField("lng2");
+                if (idxLat2 < 0 || idxLng2 < 0)
+                {
+                    Log.Log.Warn("找不到字段 lat2 lng2");
+                    return;
+                }
+                IFeatureClass lines, destFeatCls;
+                //IFeatureCursor linesCursor;
                 for (int i = 0; i < featureNum; i++)
                 {
+                    // 拿到起点在 企业点集合 中的feature
                     src = tarFeatCls.GetFeature(i);
                     string srcId = src.Value[idxId].ToString();
-                    // 记录 Origin 点对应的需要统计的信息
-                    List<double> tmpCost = new List<double>(tarFeatCls.FeatureCount(null));
-                    Log.Log.Info(string.Format("src: {0} is being caculated.", srcId));                        
-
+                    Log.Log.Info(string.Format("src: {0} is being caculated.", srcId));
+                    double lat, lng;
+                    lat = double.Parse(src.Value[idxLat2].ToString());
+                    lng = double.Parse(src.Value[idxLng2].ToString());
+                    if (lat <= 0 || lng <= 0)
+                    {
+                        continue;
+                    }
+                    List<int> ids = new List<int>();
+                    for (int j = 0; j < featureNum; j++)
+                    {
+                        if (i == j) continue;
+                        tar = tarFeatCls.GetFeature(j);
+                        lat = double.Parse(tar.Value[idxLat2].ToString());
+                        lng = double.Parse(tar.Value[idxLng2].ToString());
+                        if (lat <= 0 || lng <= 0)
+                        {
+                            continue;
+                        }
+                        // 计算直线的总 cost
+                        //IProximityOperator proximityOp = (src.Shape as IPoint) as IProximityOperator;
+                        double excelDistance = SPUtils.caculateStraightDistance((src.Shape as IPoint), (tar.Shape as IPoint));
+                        double excelCost = 60 * excelDistance / speed;
+                        if (excelCost > cutOff)
+                        {
+                            continue;
+                        }
+                        // 如果 cost 在 cutOff 范围内，则将目标点添加到 集合中
+                        ids.Add(j);
+                    }
                     /// <summary>
                     /// 代码网络分析中起点的 featureClass
                     /// 对于当前这种数据巨大的情况（一个shp可能有40w个点，计算两两之间的最短路径）
                     /// 需要对点进行循环，所以起点featureClass需要手动生成，用完后自动删除
                     /// </summary>                    
-                    IFeatureClass lines = shpNa.updateNetworkDataset(src);
+                    lines = shpNa.updateNetworkDataset(src);
                     if (lines != null)
                     {
-                        int destCount = lines.FeatureCount(null);
-                        for (int j = 0; j < destCount; j++)
-                        {                            
-                            tar = tarFeatCls.GetFeature(j);
-                            string tarId = tar.Value[idxId].ToString();
-
-                            if (lines != null)
+                        destFeatCls = shpNa.getFeatureClassFromNAClasses("Destinations");
+                        int idxName = lines.FindField("Name");
+                        int idxTotalCost = lines.Fields.FindField("Total_Cost");
+                        if (idxName < 0 || idxTotalCost < 0)
+                        {
+                            Log.Log.Warn(string.Format("找不到 ND Lines 图层中的 Name({0}) 或 Total_Cost({1})", idxName, idxTotalCost));
+                            return;
+                        }
+                                                                              
+                        int lineCount = lines.FeatureCount(null);
+                        for (int j = 1; j <= lineCount; j++)
+                        {
+                            line = lines.GetFeature(j);
+                            string name = line.Value[idxName].ToString();
+                            // name 字段过滤掉空的字符
+                            string[] names = name.Split('-').Where(n => !string.IsNullOrWhiteSpace(n.Trim())).Select(n => n.Trim()).ToArray();
+                            if (names == null || names.Count() < 2)
                             {
-                                int idxName = lines.Fields.FindField("Name");
-                                //int idxTotalCost = lines.Fields.FindField("Total_Cost");
-
-                                // 因为起点和终点都只有一个，所以 lines 只会有一个feature，其 ObjectId 一定为 1
-                                IFeature railFeat = lines.GetFeature(1);
-                                //double totalCost = -1;
-                                //try
-                                //{
-                                //    totalCost = double.Parse(railFeat.Value[idxTotalCost].ToString());
-                                //}
-                                //catch (System.Exception ex)
-                                //{
-                                //    Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", railFeat.Value[idxName].ToString()), ex);
-                                //    continue;
-                                //}
-
-                                int oriClosedFID = -1, destClosedFID = -1;
-                                double oriDist = -1, destDist = -1;
-                                // 尝试根据 feature 获得到最近的铁路线上的点的距离
-                                indexQuery2.NearestFeature(src.Shape as IPoint, out oriClosedFID, out oriDist);
-                                indexQuery2.NearestFeature(tar.Shape as IPoint, out destClosedFID, out destDist);
-                                if (oriClosedFID == -1 || destClosedFID == -1)
-                                {
-                                    Log.Log.Warn(string.Format("failed to find closed point, oriClosedFID: {0}, destClosedFID: {1}",
-                                        oriClosedFID, destClosedFID));
-                                    continue;
-                                }
-                                // 计算走铁路时的总cost
-                                //double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
-                                //IProximityOperator proximityOp = (src.Shape as IPoint) as IProximityOperator;
-                                //double excelDistance = SPUtils.caculateStraightDistance((src.Shape as IPoint), (tar.Shape as IPoint));
-                                //double excelCost = 60 * excelDistance / speed;
-                                //tmpCost.Add(Math.Min(excelCost, railCost));
-                            }
-                            else
-                            {
-                                Log.Log.Error(string.Format("feature: {0} is failed to get NA result！", tarId));
+                                Log.Log.Warn(string.Format("Lines图层的 Name 字段格式错误，Name：{0}", name));
                                 continue;
                             }
-                        }                        
+                            else if (names[0] == names[1]) continue;
+
+                            // 获取两企业点在铁路线上的时间 totalCost
+                            double totalCost = -1;
+                            try
+                            {
+                                totalCost = double.Parse(line.Value[idxTotalCost].ToString());
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Log.Log.Warn(string.Format("将 total_Cost 解析为 double 类型失败！Name 为：{0}", line.Value[idxName].ToString()), ex);
+                                continue;
+                            }
+                            // 拿到终点在 企业点集合 中的 feature
+                            int tarId = int.Parse(names[1]) - 1;
+                            tar = tarFeatCls.GetFeature(tarId);
+                            if (tar == null)
+                            {
+                                Log.Log.Warn(string.Format("找不到shp图层中ID为：{0}的Feature.", name[1]));
+                                continue;
+                            }
+
+                            int oriClosedFID = -1, destClosedFID = -1;
+                            double oriDist = -1, destDist = -1;
+                            // 尝试根据 feature 获得到最近的铁路线上的点的距离
+                            indexQuery2.NearestFeature(src.Shape as IPoint, out oriClosedFID, out oriDist);
+                            indexQuery2.NearestFeature(destFeatCls.GetFeature(tarId + 1).Shape as IPoint, out destClosedFID, out destDist);
+                            if (oriClosedFID == -1 || destClosedFID == -1)
+                            {
+                                Log.Log.Warn(string.Format("failed to find closed point, oriClosedFID: {0}, destClosedFID: {1}",
+                                    oriClosedFID, destClosedFID));
+                                continue;
+                            }
+                            // 计算走铁路时的总 cost，将cost 小于 cutOff 的终点添加到终点集合 ids 中
+                            double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
+                            if (railCost <= cutOff) ids.Add(tarId);
+                        }                                                                                           
                     }
-                    double avg = tmpCost.Sum() / tmpCost.Count();
-                    QuickSelect qSelect = new QuickSelect(tmpCost.Count());
-                    double mid = qSelect.QSelect(tmpCost.ToArray(), 0, tmpCost.Count() - 1, tmpCost.Count() / 2);
-                    List<double> val = new List<double>(2);
-                    val.Add(avg);
-                    val.Add(mid);
-                    result.Add(srcId, val);
-                    if (result.Count() >= 1000)
+
+                    ids = ids.Distinct().ToList();
+                    // 对企业点 src，统计其周边各种code类型的企业的信息
+                    Dictionary<double, List<double>> codeStat = new Dictionary<double, List<double>>();
+                    foreach (int id in ids)
+                    {
+                        tar = tarFeatCls.GetFeature(id);
+                        int code = int.Parse(tar.Value[idxCode].ToString());
+                        if (!codeStat.ContainsKey(code))
+                        {
+                            codeStat.Add(code, new List<double>(){0, 0});
+                        }
+                        codeStat[code][0] += double.Parse(tar.Value[idxPop].ToString());
+                        codeStat[code][1] += double.Parse(tar.Value[idxQuan].ToString());
+                    }
+                    result.Add(srcId, codeStat);
+
+                    int sum = result.Sum(r => r.Value.Count());
+                    if (sum >= 1000)
                     {
                         write();
                         result.Clear();
@@ -235,9 +300,12 @@ namespace DataHelper.FuncSet.ShortestPath
             using (System.IO.FileStream fs = new System.IO.FileStream(output, FileMode.Append))
             {
                 StreamWriter sw = new StreamWriter(fs);
-                foreach (KeyValuePair<string, List<double>> kv in result)
-                {
-                    sw.WriteLine(string.Format("{0}, {1}, {2}", kv.Key, kv.Value[0], kv.Value[1]));
+                foreach (KeyValuePair<string, Dictionary<double, List<double>>> kv in result)
+                {                                                        
+                    foreach (KeyValuePair<double, List<double>> ikv in kv.Value.OrderBy(k => k.Key))
+                    {
+                        sw.WriteLine(string.Format("{0}, {1}, {2}, {3}", kv.Key, ikv.Key, ikv.Value[0], ikv.Value[1]));
+                    }
                 }
                 sw.Flush();
             }

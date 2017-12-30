@@ -1,0 +1,6 @@
+D:\mzl\EconomicStudyHelper\ArcEngineHelper\bin\Debug\log4net.xml
+D:\mzl\EconomicStudyHelper\ArcEngineHelper\bin\Debug\Log.dll
+D:\mzl\EconomicStudyHelper\ArcEngineHelper\bin\Debug\Log.pdb
+D:\mzl\EconomicStudyHelper\Log\obj\Debug\Log.csprojResolveAssemblyReference.cache
+D:\mzl\EconomicStudyHelper\Log\obj\Debug\Log.dll
+D:\mzl\EconomicStudyHelper\Log\obj\Debug\Log.pdb
