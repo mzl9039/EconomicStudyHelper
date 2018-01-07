@@ -22,14 +22,14 @@ namespace DataHelper.FuncSet.ShortestPath
         /// tarFeatCls 对应的shp文件的名称
         /// </summary>
         private string tarShpName = null;
-        /// <summary>
-        /// 所有的excels文件名
-        /// </summary>
-        private List<string> excels = null;
-        /// <summary>
-        /// 所有的企业信息
-        /// </summary>
-        private List<Enterprise> enterprises = null;
+        ///// <summary>
+        ///// 所有的excels文件名
+        ///// </summary>
+        //private List<string> excels = null;
+        ///// <summary>
+        ///// 所有的企业信息
+        ///// </summary>
+        //private List<Enterprise> enterprises = null;
         /// <summary>
         /// 网络分析处理类
         /// </summary>
@@ -63,6 +63,14 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         private double cutOff = 0.0d;
         /// <summary>
+        /// 终点shp中起始的FID值，startFID到stopFID中间的点将作为起点
+        /// </summary>
+        private int startFID = 0;
+        /// <summary>
+        /// 终点shp中终止的FID值
+        /// </summary>
+        private int stopFID = 0;
+        /// <summary>
         /// 构造函数
         /// </summary>
         public SPStats(List<string> excels, string cutOff)
@@ -79,7 +87,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 }
                 // 初始化时创建输出结果文件
                 FileIOInfo fileIo = new FileIOInfo(tarShpName);
-                output = string.Format("{0}{1}{2}.csv", fileIo.FilePath, "\\", "output");
+                output = string.Format("{0}{1}{2}.csv", fileIo.FilePath, "\\", "output_" + DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss"));
                 if (File.Exists(output))
                 {
                     File.Delete(output);                   
@@ -93,14 +101,14 @@ namespace DataHelper.FuncSet.ShortestPath
 
                 tarFeatCls = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(tarShpName);
                 // 获取所有企业点的excels文件的名称以及所有企业点的list
-                if (excels == null || excels.Count() <= 0)
-                {
-                    Log.Log.Warn(string.Format("未获取到excels文件信息，可能选择了一个错误的excel目录."));
-                }
-                else
-                {
-                    this.excels = excels;
-                }
+                //if (excels == null || excels.Count() <= 0)
+                //{
+                //    Log.Log.Warn(string.Format("未获取到excels文件信息，可能选择了一个错误的excel目录."));
+                //}
+                //else
+                //{
+                //    this.excels = excels;
+                //}
                 if (!shpNa.init(tarFeatCls, cutOff))
                 {
                     Log.Log.Warn("初始化 ShpNA 失败");
@@ -152,10 +160,15 @@ namespace DataHelper.FuncSet.ShortestPath
                 }
                 IFeatureClass lines, destFeatCls;
                 //IFeatureCursor linesCursor;
-                for (int i = 0; i < featureNum; i++)
+                for (int i = startFID; i < stopFID; i++)
                 {
                     // 拿到起点在 企业点集合 中的feature
                     src = tarFeatCls.GetFeature(i);
+                    if (src == null)
+                    {
+                        Log.Log.Error(string.Format("无法获取FID为{0}的点", i));
+                        return;
+                    }
                     string srcId = src.Value[idxId].ToString();
                     Log.Log.Info(string.Format("src: {0} is being caculated.", srcId));
                     double lat, lng;
@@ -317,6 +330,16 @@ namespace DataHelper.FuncSet.ShortestPath
             this.speed = speed;
         }
 
+        public void setStartFID(int startFID)
+        {
+            this.startFID = startFID;
+        }
+
+        public void setStopFID(int stopFID)
+        {
+            this.stopFID = stopFID;
+        }
+
         public void setRailPoints(string railPoints)
         {
             railFeatFileName = railPoints;
@@ -333,26 +356,26 @@ namespace DataHelper.FuncSet.ShortestPath
         }
     }
 
-    class Stat
-    {
-        // 企业类型
-        public int type;
-        // 周边类型企业的数目
-        public int typeNum;
-        // 周边企业的人口数
-        public long popNum;
+    //class Stat
+    //{
+    //    // 企业类型
+    //    public int type;
+    //    // 周边类型企业的数目
+    //    public int typeNum;
+    //    // 周边企业的人口数
+    //    public long popNum;
 
-        public Stat() { }
-        public Stat(int type, int typeNum, int popNum)
-        {
-            this.type = type;
-            this.typeNum = typeNum;
-            this.popNum = popNum;                
-        }
+    //    public Stat() { }
+    //    public Stat(int type, int typeNum, int popNum)
+    //    {
+    //        this.type = type;
+    //        this.typeNum = typeNum;
+    //        this.popNum = popNum;                
+    //    }
 
-        public override string ToString()
-        {
-            return string.Format("{0}, {1}, {2}", type, typeNum, popNum);
-        }
-    }
+    //    public override string ToString()
+    //    {
+    //        return string.Format("{0}, {1}, {2}", type, typeNum, popNum);
+    //    }
+    //}
 }

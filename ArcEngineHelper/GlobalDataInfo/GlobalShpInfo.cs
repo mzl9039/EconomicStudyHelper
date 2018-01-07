@@ -223,5 +223,71 @@ namespace DataHelper
 
             return fields;
         }
+
+        public static IFields GenerateTransportationCircleFields()
+        {
+            IFields fields = new FieldsClass();
+            IFieldsEdit fieldsEdit = fields as IFieldsEdit;
+
+            IGeometryDef geoDef = new GeometryDefClass();
+            IGeometryDefEdit geometryDefEdit = geoDef as IGeometryDefEdit;
+            geometryDefEdit.AvgNumPoints_2 = 1;
+            geometryDefEdit.GridCount_2 = 0;
+            geometryDefEdit.GeometryType_2 = esriGeometryType.esriGeometryPoint;
+
+            IField shapeField = new FieldClass();
+            IFieldEdit shapeFieldEdit = shapeField as IFieldEdit;
+            shapeFieldEdit.Name_2 = "SHAPE";
+            shapeFieldEdit.IsNullable_2 = true;
+            shapeFieldEdit.Type_2 = esriFieldType.esriFieldTypeGeometry;
+            shapeFieldEdit.GeometryDef_2 = geoDef;
+            shapeFieldEdit.Required_2 = true;
+            geometryDefEdit.SpatialReference_2 = Static.SpatialReference;
+
+            IField oidField = new FieldClass();
+            IFieldEdit oidFieldEdit = oidField as IFieldEdit;
+            oidFieldEdit.Name_2 = "ObjectID";
+            oidFieldEdit.AliasName_2 = "FID";
+            oidFieldEdit.Type_2 = esriFieldType.esriFieldTypeOID;
+
+            IField excelId = new FieldClass();
+            IFieldEdit excelIdEdit = excelId as IFieldEdit;
+            excelIdEdit.Name_2 = "ExcelId";
+            excelIdEdit.AliasName_2 = "Excel源";
+            excelIdEdit.Type_2 = esriFieldType.esriFieldTypeString;
+
+            IField man = new FieldClass();
+            IFieldEdit manEdit = man as IFieldEdit;
+            manEdit.Name_2 = "Man";
+            manEdit.AliasName_2 = "员工数";
+            manEdit.Type_2 = esriFieldType.esriFieldTypeInteger;
+
+            IField lng2 = new FieldClass();
+            IFieldEdit lng2FieldEdit = lng2 as IFieldEdit;
+            lng2FieldEdit.Name_2 = "lng2";
+            lng2FieldEdit.AliasName_2 = "lng2";
+            lng2FieldEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            IField lat2 = new FieldClass();
+            IFieldEdit lat2FieldEdit = lat2 as IFieldEdit;
+            lat2FieldEdit.Name_2 = "lat2";
+            lat2FieldEdit.AliasName_2 = "lat2";
+            lat2FieldEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            IField id = new FieldClass();
+            IFieldEdit idFieldEdit = id as IFieldEdit;
+            idFieldEdit.Name_2 = "ID";
+            idFieldEdit.AliasName_2 = "ID";
+            idFieldEdit.Type_2 = esriFieldType.esriFieldTypeDouble;
+
+            fieldsEdit.AddField(shapeField);
+            fieldsEdit.AddField(oidField);
+            fieldsEdit.AddField(excelId);
+            fieldsEdit.AddField(man);
+            fieldsEdit.AddField(lng2);
+            fieldsEdit.AddField(lat2);
+            fieldsEdit.AddField(id);
+            return fields;
+        }
     }
 }

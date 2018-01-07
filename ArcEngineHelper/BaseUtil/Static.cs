@@ -7,6 +7,7 @@ using System.Text;
 using ESRI.ArcGIS.Geodatabase;
 using Common;
 using DataHelper.FuncSet;
+using System.Windows.Forms;
 
 namespace DataHelper.BaseUtil
 {
@@ -16,7 +17,7 @@ namespace DataHelper.BaseUtil
         public static string SelectedPath = string.Empty;
 
         // 根据选择的shp文件定义空间坐标系
-        public static ISpatialReference SpatialReference = null;
+        public static ISpatialReference SpatialReference = InitSpatialReference();
 
         public static IFeatureClass FeatureClass = null;
 
@@ -40,6 +41,26 @@ namespace DataHelper.BaseUtil
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+        }
+
+        public static ISpatialReference InitSpatialReference()
+        {
+            if (Static.SpatialReference == null)
+            {
+                ISpatialReferenceFactory srf = new SpatialReferenceEnvironmentClass();
+                string filename = string.Empty;
+                OpenFileDialog ofd = new OpenFileDialog();
+                ofd.Title = "打开坐标系文件";
+                ofd.Filter = "直径 | *.prj";
+                ofd.Multiselect = false;
+                ofd.RestoreDirectory = true;
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    filename = ofd.FileName;
+                }
+                Static.SpatialReference = srf.CreateESRISpatialReferenceFromPRJFile(filename);
+            }
+            return Static.SpatialReference;
         }
     }
 }

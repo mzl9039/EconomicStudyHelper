@@ -6,6 +6,7 @@ using System.Text;
 using DataHelper.BaseUtil;
 using System.Data;
 using ESRI.ArcGIS.Geometry;
+using System.Windows.Forms;
 
 namespace DataHelper.FuncSet.ShortestPath
 {
@@ -24,6 +25,7 @@ namespace DataHelper.FuncSet.ShortestPath
         /// <param name="dstEnterId"></param>
         /// <returns></returns>
         public static double caculateStraightDistance(IPoint oriEnt, IPoint destEnt) {
+            if (destEnt == null || oriEnt == null) return int.MaxValue;
             double result = Math.Sqrt((oriEnt.X - destEnt.X) * (oriEnt.X - destEnt.X) +
                 (oriEnt.Y - destEnt.Y) * (oriEnt.Y - destEnt.Y)) / 1000;
             return result;
@@ -49,7 +51,6 @@ namespace DataHelper.FuncSet.ShortestPath
                 Log.Log.Error("读取excels文件失败", ex);
                 return new List<Enterprise>();
             }            
-        }    
-
+        }
     }
 }

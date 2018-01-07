@@ -11,6 +11,7 @@ using ESRI.ArcGIS.Geometry;
 // using LogHelper;
 using ESRI.ArcGIS.esriSystem;
 using DataHelper.BaseUtil;
+using ESRI.ArcGIS.Geodatabase;
 
 namespace DataHelper
 {
@@ -48,11 +49,21 @@ namespace DataHelper
                 case FunctionType.KdEachTableCircle:
                     point = GetBeijing54ProjFromWGS84(lng, lat);
                     break;
+                case FunctionType.TransportationCirble:
+                    point = GetBeijing54ProjToFixedProj(lng, lat);
+                    break;
 				default:
 					throw new Exception("Invalid value for FunctionType");
 			}
 		    return point;
 		}
+
+        public static IPoint GetBeijing54ProjToFixedProj(double lng, double lat)
+        {
+            IPoint point = GetBeijing54GCSFromWGS84(lng, lat);            
+            point.Project(Static.SpatialReference);
+            return point;
+        }
 
 		public static IPoint GetBeijing54ProjFromWGS84(double lng, double lat){
 			IPoint point = GetBeijing54GCSFromWGS84(lng, lat);

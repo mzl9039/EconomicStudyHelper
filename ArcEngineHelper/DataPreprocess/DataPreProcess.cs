@@ -10,6 +10,7 @@ using System.Data;
 // using LogHelper;
 using System.Windows.Forms;
 using ESRI.ArcGIS.ADF;
+using DataHelper.BaseUtil;
 
 namespace DataHelper
 {

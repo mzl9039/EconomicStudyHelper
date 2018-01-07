@@ -26,7 +26,8 @@ namespace DataHelper
         KdEachTable = 5,
         KdEachTablbCara = 6,
         KdEachTableCircle = 7,
-        KdEachTableMultiCircle = 8
+        KdEachTableMultiCircle = 8,
+        TransportationCirble = 9
     }
 
     public enum KdType

@@ -148,9 +148,9 @@ namespace EconomicStudyHelper
                     spBase = new SPBase(excels.ToList());
                     spBase.SPStat();
                     break;
-                case "行业内最短路径":
+                case "行业内交通圈":
                     spBase = new SPBase(excels.ToList());
-
+                    spBase.TransportationCircleStat();
                     break;
                 default:
                     break;
@@ -176,7 +176,7 @@ namespace EconomicStudyHelper
         //  [5/15/2016 16:22:36 mzl]
         private string[] funcType = new[] { "K(d)", "EGIndex", "EGRobust", "K(d)EachTable距离特征值",
             "K(d)Cara", "K(d)Circle", "K(d)单圆多圆", "H指数", "分区域H指数", "搜索圆内企业",
-            "搜索圆内企业-所有行业", "经纬度转换为县名", "企业点存为csv", "最短路径均值/中位数", "行业内最短路径"};
+            "搜索圆内企业-所有行业", "经纬度转换为县名", "企业点存为csv", "最短路径均值/中位数", "行业内交通圈"};
 
         // 对Kd计算做调整，看企业规模的变化会结果的影响 [5/8/2016 mzl]
         private string[] kdFuncType = new string[] { "原有Kd方法", "计算企业规模的Kd方法", "无" };

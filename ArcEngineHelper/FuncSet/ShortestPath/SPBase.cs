@@ -32,10 +32,13 @@ namespace DataHelper.FuncSet.ShortestPath
             GetSpeed getSpeed = new GetSpeed();
             double speed = -1;
             string cutOff = "";
+            int startFID = 0, stopFID = 0;
             if (getSpeed.ShowDialog() == DialogResult.OK)
             {
                 speed = getSpeed.Speed();
                 cutOff = getSpeed.CutOff();
+                startFID = getSpeed.StartFID();
+                stopFID = getSpeed.StopFID();
             }
 
             if (speed == -1 || string.IsNullOrWhiteSpace(cutOff))
@@ -51,8 +54,46 @@ namespace DataHelper.FuncSet.ShortestPath
             }
             SPStats stats = new SPStats(excels, cutOff);
             stats.setSpeed(speed);
+            stats.setStartFID(startFID);
+            stats.setStopFID(stopFID);
             stats.setRailPoints(railPoints);
             stats.caculateShortestPath();
         }
-    }
+
+        public void TransportationCircleStat()
+        {
+            GetSpeed getSpeed = new GetSpeed();
+            double speed = -1;
+            string cutOff = "";
+            int startFID = 0, stopFID = 0;
+            if (getSpeed.ShowDialog() == DialogResult.OK)
+            {
+                speed = getSpeed.Speed();
+                cutOff = getSpeed.CutOff();
+                startFID = getSpeed.StartFID();
+                stopFID = getSpeed.StopFID();
+            }
+
+            if (speed == -1 || string.IsNullOrWhiteSpace(cutOff))
+            {
+                Log.Log.Warn("无法正确获取速度或cutOff，退出。");
+                return;
+            }
+
+            string railPoints = DataPreProcess.GetShpName("获取公路/铁路线点集");
+            if (!File.Exists(railPoints) && !railPoints.EndsWith(".shp"))
+            {
+                Log.Log.Warn("公路/铁路线点集文件不存在");
+                return;
+            }
+
+            this.excels.ForEach(excel =>
+            {
+                TransportationCircle tc = new TransportationCircle(excel, cutOff);
+                tc.setSpeed(speed);
+                tc.setRailPoints(railPoints);
+                tc.caculateTransportationCircle();
+            });
+        }
+    }   
 }

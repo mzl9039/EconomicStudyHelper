@@ -127,6 +127,7 @@
     <Compile Include="FuncSet\ShortestPath\SPBase.cs" />
     <Compile Include="FuncSet\ShortestPath\SPStats.cs" />
     <Compile Include="FuncSet\ShortestPath\SPUtils.cs" />
+    <Compile Include="FuncSet\ShortestPath\TransportationCircle.cs" />
     <Compile Include="FuncSet\SimulateTimes\SimulateTimes.cs">
       <SubType>Form</SubType>
     </Compile>

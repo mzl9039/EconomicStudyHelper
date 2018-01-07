@@ -13,6 +13,8 @@ namespace DataHelper.FuncSet.ShortestPath
     {
         private double speed = -1;
         private string cutOff = "";
+        private int startFID = 0;
+        private int stopFID = 0;
 
         public double Speed() {
             return this.speed;
@@ -20,6 +22,14 @@ namespace DataHelper.FuncSet.ShortestPath
 
         public string CutOff() {
             return this.cutOff;
+        }
+
+        public int StartFID() {
+            return this.startFID;
+        }
+
+        public int StopFID() {
+            return this.stopFID;
         }
 
         public GetSpeed()
@@ -50,6 +60,26 @@ namespace DataHelper.FuncSet.ShortestPath
                 {
                     string val = txt_cutOff.Text.Trim();
                     this.cutOff = val;                   
+                }
+                if (string.IsNullOrWhiteSpace(txtBox_startFID.Text))
+                {
+                    Log.Log.Warn("必须填写默认的起始FID值");
+                    return;
+                }
+                else
+                {
+                    int val = int.Parse(txtBox_startFID.Text.Trim());
+                    this.startFID = val;
+                }
+                if (string.IsNullOrWhiteSpace(txtBox_stopFID.Text.Trim()))
+                {
+                    Log.Log.Warn("必须填写默认的终止FID值");
+                    return;
+                }
+                else
+                {
+                    int val = int.Parse(txtBox_stopFID.Text.Trim());
+                    this.stopFID = val;
                 }
                 this.DialogResult = DialogResult.OK;
             }

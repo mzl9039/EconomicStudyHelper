@@ -216,6 +216,49 @@ namespace Geodatabase
 
         /// <summary>
         ///
+        /// 功能描述:   要素删除
+        /// 开发者:     XXX
+        /// 建立时间:   2008-10-11 0:00:00
+        ///
+        /// </summary>
+        /// <param name="iFeatCursor"></param>
+        public static void ClearFeatureClass(IFeatureCursor iFeatCursor)
+        {
+            IFeature iOriFeat;
+
+            iOriFeat = iFeatCursor.NextFeature();
+            if (iOriFeat == null)
+            {
+                return;
+            }
+            else
+            {
+                IFeatureClass iDestClass = iOriFeat.Class as IFeatureClass;
+                IDataset dataset = (IDataset)iDestClass;
+                IWorkspace workspace = dataset.Workspace;
+
+                //Cast for an IWorkspaceEdit
+                IWorkspaceEdit workspaceEdit = (IWorkspaceEdit)workspace;
+
+                //Start an edit session and operation
+                workspaceEdit.StartEditing(true);
+                workspaceEdit.StartEditOperation();
+
+                iOriFeat = iFeatCursor.NextFeature();
+                while (iOriFeat != null)
+                {
+                    iFeatCursor.DeleteFeature();
+                    iOriFeat = iFeatCursor.NextFeature();
+                }
+                iFeatCursor.Flush();                
+
+                workspaceEdit.StopEditOperation();
+                workspaceEdit.StopEditing(true);
+            }
+        }
+
+        /// <summary>
+        ///
         /// 功能描述:   创建初始化默认值的新对象
         /// 开发者:     XXX
         /// 建立时间:   2008-10-11 0:00:00

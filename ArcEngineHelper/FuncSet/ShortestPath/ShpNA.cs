@@ -34,6 +34,10 @@ namespace DataHelper.FuncSet.ShortestPath
         /// </summary>
         public IFeatureClass originFeatCls;
         /// <summary>
+        /// 起点shp文件的cursor，用来删除feature
+        /// </summary>
+        public IFeatureCursor originFeatCursor;
+        /// <summary>
         /// 要生成的起点和终点的字段结构
         /// </summary>
         public IFields fields;
@@ -175,6 +179,19 @@ namespace DataHelper.FuncSet.ShortestPath
             }
             try
             {
+                #region 暂时不动原来的代码，若出错概率较高，则使用新的方法，即不删除featureClass，而是清空它
+                //if (originFeatCls == null)
+                //{
+                //    originFeatCls = createFeatureClass(origin);                    
+                //}
+                //if (originFeatCls == null)
+                //{
+                //    Log.Log.Error(string.Format("创建 Origin 图层失败，退出"));
+
+                //}
+                //originFeatCursor = originFeatCls.Search(null, false);
+                //Geodatabase.GeodatabaseOp.ClearFeatureClass(originFeatCursor);
+                #endregion
                 originFeatCls = createFeatureClass(origin);
                 Geodatabase.GeodatabaseOp.CreateFeature(originFeatCls, src);
             }
@@ -195,7 +212,12 @@ namespace DataHelper.FuncSet.ShortestPath
             IDictionary<string, string> featureClassDic = Geodatabase.GeodatabaseOp.GetFeatureClassNameDic(featureDataset);
             if (featureClassDic.ContainsKey(name))
             {
-                Geodatabase.GeodatabaseOp.DeleteFeatureClass(mdbWorkspace, name);
+                bool isDelete = Geodatabase.GeodatabaseOp.DeleteFeatureClass(mdbWorkspace, name);
+                if (isDelete == false)
+                {
+                    Log.Log.Error(string.Format("删除图层{0}失败", name));
+                    return null;
+                }              
             }
             string strShapeField = "Shape";
             IFeatureClassDescription fcd = new FeatureClassDescriptionClass();
