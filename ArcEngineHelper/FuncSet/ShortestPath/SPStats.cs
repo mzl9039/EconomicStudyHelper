@@ -95,20 +95,11 @@ namespace DataHelper.FuncSet.ShortestPath
                 using (System.IO.FileStream fs = new System.IO.FileStream(output, FileMode.Create))
                 {
                     StreamWriter sw = new StreamWriter(fs);
-                    sw.WriteLine(string.Format("id, code, pop, quan"));
+                    sw.WriteLine(string.Format("id, code, pop, quan, popWeight"));
                     sw.Flush();
                 }
 
                 tarFeatCls = Geodatabase.GeodatabaseOp.OpenShapefileAsFeatClass(tarShpName);
-                // 获取所有企业点的excels文件的名称以及所有企业点的list
-                //if (excels == null || excels.Count() <= 0)
-                //{
-                //    Log.Log.Warn(string.Format("未获取到excels文件信息，可能选择了一个错误的excel目录."));
-                //}
-                //else
-                //{
-                //    this.excels = excels;
-                //}
                 if (!shpNa.init(tarFeatCls, cutOff))
                 {
                     Log.Log.Warn("初始化 ShpNA 失败");
@@ -160,7 +151,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 }
                 IFeatureClass lines, destFeatCls;
                 //IFeatureCursor linesCursor;
-                for (int i = startFID; i < stopFID; i++)
+                for (int i = startFID; i < Math.Min(stopFID, featureNum); i++)
                 {
                     // 拿到起点在 企业点集合 中的feature
                     src = tarFeatCls.GetFeature(i);
@@ -178,7 +169,10 @@ namespace DataHelper.FuncSet.ShortestPath
                     {
                         continue;
                     }
-                    List<int> ids = new List<int>();
+                    // alter by mzl 2018-6-2 需要添加除周边企业人口总数和企业数之外的三重统计函数
+                    // List<int> ids = new List<int>();
+                    // 适用 dict 并不是一个好的数据结构，但现在的方法，不重构很难存储 cost 信息
+                    IDictionary<int, double> idsAndCosts = new Dictionary<int, double>();
                     for (int j = 0; j < featureNum; j++)
                     {
                         if (i == j) continue;
@@ -198,7 +192,8 @@ namespace DataHelper.FuncSet.ShortestPath
                             continue;
                         }
                         // 如果 cost 在 cutOff 范围内，则将目标点添加到 集合中
-                        ids.Add(j);
+                        //ids.Add(j);
+                        idsAndCosts.Add(j, excelCost);
                     }
                     /// <summary>
                     /// 代码网络分析中起点的 featureClass
@@ -264,23 +259,40 @@ namespace DataHelper.FuncSet.ShortestPath
                             }
                             // 计算走铁路时的总 cost，将cost 小于 cutOff 的终点添加到终点集合 ids 中
                             double railCost = 60 * (oriDist + destDist) / (speed * 1000) + totalCost;
-                            if (railCost <= cutOff) ids.Add(tarId);
+                            // if (railCost <= cutOff) ids.Add(tarId);
+                            if (railCost <= cutOff)
+                            {
+                                if (idsAndCosts.ContainsKey(tarId))
+                                {
+                                    if (railCost < idsAndCosts[tarId])
+                                    {
+                                        idsAndCosts[tarId] = railCost;
+                                    }                                    
+                                }
+                                else
+                                {
+                                    idsAndCosts.Add(tarId, railCost);
+                                }
+                            }
                         }                                                                                           
                     }
 
-                    ids = ids.Distinct().ToList();
+                    // ids = ids.Distinct().ToList();
                     // 对企业点 src，统计其周边各种code类型的企业的信息
                     Dictionary<double, List<double>> codeStat = new Dictionary<double, List<double>>();
-                    foreach (int id in ids)
+                    //foreach (int id in ids)
+                    foreach (int id in idsAndCosts.Keys)
                     {
                         tar = tarFeatCls.GetFeature(id);
                         int code = int.Parse(tar.Value[idxCode].ToString());
                         if (!codeStat.ContainsKey(code))
                         {
-                            codeStat.Add(code, new List<double>(){0, 0});
+                            codeStat.Add(code, new List<double>(){0, 0, 0});
                         }
                         codeStat[code][0] += double.Parse(tar.Value[idxPop].ToString());
                         codeStat[code][1] += double.Parse(tar.Value[idxQuan].ToString());
+                        double weight = Math.Pow(1 - Math.Pow(idsAndCosts[id] / cutOff, 3), 3);
+                        codeStat[code][2] += double.Parse(tar.Value[idxPop].ToString()) * weight;
                     }
                     result.Add(srcId, codeStat);
 
@@ -317,7 +329,7 @@ namespace DataHelper.FuncSet.ShortestPath
                 {                                                        
                     foreach (KeyValuePair<double, List<double>> ikv in kv.Value.OrderBy(k => k.Key))
                     {
-                        sw.WriteLine(string.Format("{0}, {1}, {2}, {3}", kv.Key, ikv.Key, ikv.Value[0], ikv.Value[1]));
+                        sw.WriteLine(string.Format("{0}, {1}, {2}, {3}, {4}", kv.Key, ikv.Key, ikv.Value[0], ikv.Value[1], ikv.Value[2]));
                     }
                 }
                 sw.Flush();
@@ -355,27 +367,4 @@ namespace DataHelper.FuncSet.ShortestPath
             index.Index(trackCancel, tGeodataset.Extent);
         }
     }
-
-    //class Stat
-    //{
-    //    // 企业类型
-    //    public int type;
-    //    // 周边类型企业的数目
-    //    public int typeNum;
-    //    // 周边企业的人口数
-    //    public long popNum;
-
-    //    public Stat() { }
-    //    public Stat(int type, int typeNum, int popNum)
-    //    {
-    //        this.type = type;
-    //        this.typeNum = typeNum;
-    //        this.popNum = popNum;                
-    //    }
-
-    //    public override string ToString()
-    //    {
-    //        return string.Format("{0}, {1}, {2}", type, typeNum, popNum);
-    //    }
-    //}
 }
